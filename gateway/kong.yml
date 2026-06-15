@@ -1,0 +1,11 @@
+_format_version: "3.0"
+_transform: true
+
+services:
+  - name: fintrack-backend
+    url: http://backend:8080
+    routes:
+      - name: fintrack-api
+        paths:
+          - /api
+        strip_path: true

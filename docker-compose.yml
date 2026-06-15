@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: fintrack_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fintrack_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fintrack_password}
+      POSTGRES_DB: ${POSTGRES_DB:-fintrack}
+    ports:
+      - "5432:5432"
+    volumes:
+      - fintrack_pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fintrack_user} -d ${POSTGRES_DB:-fintrack}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: fintrack_backend
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      # EF Core reads ConnectionStrings:DefaultConnection; "__" maps to the nested key.
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-fintrack};Username=${POSTGRES_USER:-fintrack_user};Password=${POSTGRES_PASSWORD:-fintrack_password}"
+    ports:
+      - "8000:8080"   # direct backend -> http://localhost:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  kong:
+    image: kong:3.7
+    container_name: fintrack_gateway
+    restart: unless-stopped
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+    ports:
+      - "8080:8000"   # gateway proxy -> http://localhost:8080/api
+      - "8001:8001"   # gateway admin -> http://localhost:8001
+    volumes:
+      - ./gateway/kong.yml:/kong/declarative/kong.yml:ro
+    depends_on:
+      - backend
+
+volumes:
+  fintrack_pgdata:
