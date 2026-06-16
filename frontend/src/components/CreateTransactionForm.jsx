@@ -64,6 +64,8 @@ function CreateTransactionForm({ userId, accounts, onTransactionCreated }) {
           placeholder="Amount"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
+          min="0.01"
+          step="0.01"
           required
         />
 
