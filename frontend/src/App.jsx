@@ -29,96 +29,116 @@ function App() {
       <h1>FinTrack</h1>
       <p>Digital Wallet & Smart Finance Analytics Platform</p>
 
-      <CreateUserForm onUserCreated={setCurrentUser} />
+      <nav className="top-nav">
+        <a href="#user">User</a>
+        <a href="#accounts">Accounts</a>
+        <a href="#transactions">Transactions</a>
+        <a href="#budgets">Budgets</a>
+        <a href="#analytics">Analytics</a>
+      </nav>
 
-      {currentUser && (
-        <div className="card">
-          <h2>Current User</h2>
+  <section id="user">
+  {!currentUser && <CreateUserForm onUserCreated={setCurrentUser} />}
 
-          <p>
-            <strong>ID:</strong> {currentUser.id}
-          </p>
+  {currentUser && (
+    <div className="card">
+      <h2>Current User</h2>
 
-          <p>
-            <strong>Email:</strong> {currentUser.email}
-          </p>
+      <p>
+        <strong>ID:</strong> {currentUser.id}
+      </p>
 
-          <p>
-            <strong>Full Name:</strong> {currentUser.fullName}
-          </p>
-        </div>
-      )}
+      <p>
+        <strong>Email:</strong> {currentUser.email}
+      </p>
+
+      <p>
+        <strong>Full Name:</strong> {currentUser.fullName || "Not provided"}
+      </p>
+    </div>
+  )}
+</section>
 
       {currentUser && (
         <>
-          <CreateAccountForm
-            userId={currentUser.id}
-            onAccountCreated={handleAccountCreated}
-          />
+          <section id="accounts">
+            <CreateAccountForm
+              userId={currentUser.id}
+              onAccountCreated={handleAccountCreated}
+            />
 
-          <div className="card">
-            <h2>Accounts</h2>
+            <div className="card">
+              <h2>Accounts</h2>
 
-            {accounts.length === 0 ? (
-              <p>No accounts created yet.</p>
-            ) : (
-              <ul>
-                {accounts.map((account) => (
-                  <li key={account.id}>
-                    {account.name} - {account.accountType} - {account.currency}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+              {accounts.length === 0 ? (
+                <p>No accounts created yet.</p>
+              ) : (
+                <ul>
+                  {accounts.map((account) => (
+                    <li key={account.id}>
+                      {account.name} - {account.accountType} -{" "}
+                      {account.currency}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </section>
 
           {accounts.length > 0 && (
             <>
-              <CreateTransactionForm
-                userId={currentUser.id}
-                accounts={accounts}
-                onTransactionCreated={handleTransactionCreated}
-              />
+              <section id="transactions">
+                <CreateTransactionForm
+                  userId={currentUser.id}
+                  accounts={accounts}
+                  onTransactionCreated={handleTransactionCreated}
+                />
 
-              <div className="card">
-                <h2>Transactions</h2>
+                <div className="card">
+                  <h2>Transactions</h2>
 
-                {transactions.length === 0 ? (
-                  <p>No transactions created yet.</p>
-                ) : (
-                  <ul>
-                    {transactions.map((transaction) => (
-                      <li key={transaction.id}>
-                        {transaction.transactionDate} - {transaction.category} - €
-                        {transaction.amount} - {transaction.description}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+                  {transactions.length === 0 ? (
+                    <p>No transactions created yet.</p>
+                  ) : (
+                    <ul>
+                      {transactions.map((transaction) => (
+                        <li key={transaction.id}>
+                          {transaction.transactionDate} -{" "}
+                          {transaction.category} - €{transaction.amount} -{" "}
+                          {transaction.description}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </section>
 
-              <CreateBudgetForm
-                userId={currentUser.id}
-                onBudgetCreated={handleBudgetCreated}
-              />
+              <section id="budgets">
+                <CreateBudgetForm
+                  userId={currentUser.id}
+                  onBudgetCreated={handleBudgetCreated}
+                />
 
-              <div className="card">
-                <h2>Budgets</h2>
+                <div className="card">
+                  <h2>Budgets</h2>
 
-                {budgets.length === 0 ? (
-                  <p>No budgets created yet.</p>
-                ) : (
-                  <ul>
-                    {budgets.map((budget) => (
-                      <li key={budget.id}>
-                        {budget.category} - €{budget.monthlyLimit} / month
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+                  {budgets.length === 0 ? (
+                    <p>No budgets created yet.</p>
+                  ) : (
+                    <ul>
+                      {budgets.map((budget) => (
+                        <li key={budget.id}>
+                          {budget.category} - €{budget.monthlyLimit} / month
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </section>
 
-              <AnalyticsPanel userId={currentUser.id} />
+              <section id="analytics">
+                <AnalyticsPanel userId={currentUser.id} />
+              </section>
             </>
           )}
         </>
