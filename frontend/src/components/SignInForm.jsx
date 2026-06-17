@@ -1,21 +1,22 @@
 import { useState } from "react";
-import { getUserById } from "../services/api";
+import { loginUser } from "../services/api";
 
 function SignInForm({ onUserSignedIn }) {
-  const [userId, setUserId] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   async function handleSubmit(e) {
     e.preventDefault();
-
     setError("");
 
     try {
-      const user = await getUserById(userId);
+      const user = await loginUser(email, password);
       onUserSignedIn(user);
-      setUserId("");
+      setEmail("");
+      setPassword("");
     } catch (err) {
-      setError("User not found. Please check the User ID.");
+      setError("Invalid email or password.");
     }
   }
 
@@ -25,10 +26,18 @@ function SignInForm({ onUserSignedIn }) {
 
       <form onSubmit={handleSubmit}>
         <input
-          type="text"
-          placeholder="Enter your User ID"
-          value={userId}
-          onChange={(e) => setUserId(e.target.value)}
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
           required
         />
 

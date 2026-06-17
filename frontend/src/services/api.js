@@ -60,3 +60,10 @@ export function getSpendingByCategory(userId) {
 export function getUserById(userId) {
   return request(`/users/${userId}`);
 }
+
+export function loginUser(email, password) {
+  return request("/users/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}

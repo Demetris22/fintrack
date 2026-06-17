@@ -36,6 +36,17 @@ public class UsersController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = user.Id }, ToResponse(user));
     }
 
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    {
+        var hash = HashPassword(request.Password);
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == request.Email && u.PasswordHash == hash);
+        if (user is null)
+            return Unauthorized(new { message = "Invalid email or password." });
+
+        return Ok(ToResponse(user));
+    }
+
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
