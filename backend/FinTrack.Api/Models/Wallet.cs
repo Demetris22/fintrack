@@ -5,6 +5,7 @@ public class Wallet
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
     public User User { get; set; } = null!;
+    public string Name { get; set; } = null!;
     public string Currency { get; set; } = "EUR";
     public long BalanceMinor { get; set; }
     public string Status { get; set; } = "active";

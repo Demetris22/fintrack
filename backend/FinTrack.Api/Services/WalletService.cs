@@ -17,18 +17,15 @@ public class WalletService : IWalletService
         _ledgerService = ledgerService;
     }
 
-    public async Task<Wallet> CreateWalletAsync(Guid userId, string currency, CancellationToken cancellationToken = default)
+    public async Task<Wallet> CreateWalletAsync(Guid userId, string currency, string name, CancellationToken cancellationToken = default)
     {
         currency = currency.ToUpperInvariant();
-
-        var exists = await _db.Wallets.AnyAsync(w => w.UserId == userId && w.Currency == currency, cancellationToken);
-        if (exists)
-            throw new WalletConflictException($"A {currency} wallet already exists for this user.");
 
         var wallet = new Wallet
         {
             Id = Guid.NewGuid(),
             UserId = userId,
+            Name = name,
             Currency = currency,
             BalanceMinor = 0,
             Status = "active",
@@ -159,6 +156,7 @@ public class WalletService : IWalletService
         {
             Id = Guid.NewGuid(),
             UserId = systemUserId.Value,
+            Name = $"System {currency}",
             Currency = currency,
             BalanceMinor = 0,
             Status = "active",

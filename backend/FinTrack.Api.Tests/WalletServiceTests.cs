@@ -19,24 +19,28 @@ public class WalletServiceTests
         var walletService = new WalletService(db, ledgerService);
 
         var user = await TestData.CreateUserAsync(db);
-        var wallet = await walletService.CreateWalletAsync(user.Id, "EUR");
+        var wallet = await walletService.CreateWalletAsync(user.Id, "EUR", "Main Wallet");
 
         Assert.Equal(0, wallet.BalanceMinor);
         Assert.Equal("active", wallet.Status);
+        Assert.Equal("Main Wallet", wallet.Name);
     }
 
     [Fact]
-    public async Task CreateWallet_DuplicateCurrencyForSameUser_Throws()
+    public async Task CreateWallet_MultipleWalletsSameCurrencyForSameUser_Succeeds()
     {
         using var db = _fixture.CreateDbContext();
         var ledgerService = new LedgerService(db);
         var walletService = new WalletService(db, ledgerService);
 
         var user = await TestData.CreateUserAsync(db);
-        await walletService.CreateWalletAsync(user.Id, "EUR");
+        var spending = await walletService.CreateWalletAsync(user.Id, "EUR", "Spending");
+        var savings = await walletService.CreateWalletAsync(user.Id, "EUR", "Savings");
 
-        await Assert.ThrowsAsync<WalletConflictException>(
-            () => walletService.CreateWalletAsync(user.Id, "EUR"));
+        Assert.NotEqual(spending.Id, savings.Id);
+
+        var wallets = await walletService.GetWalletsForUserAsync(user.Id);
+        Assert.Equal(2, wallets.Count);
     }
 
     [Fact]
