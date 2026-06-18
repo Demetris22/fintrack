@@ -92,4 +92,53 @@ public class WalletServiceTests
         await Assert.ThrowsAsync<ArgumentException>(
             () => walletService.DepositAsync(user.Id, wallet.Id, -10m));
     }
+
+    [Fact]
+    public async Task GetWalletById_ForAnotherUsersWallet_ReturnsNull()
+    {
+        using var db = _fixture.CreateDbContext();
+        var ledgerService = new LedgerService(db);
+        var walletService = new WalletService(db, ledgerService);
+
+        var owner = await TestData.CreateUserAsync(db);
+        var stranger = await TestData.CreateUserAsync(db);
+        var wallet = await TestData.CreateWalletAsync(db, owner.Id, "EUR");
+
+        var result = await walletService.GetWalletByIdAsync(wallet.Id, stranger.Id);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task Deposit_IntoAnotherUsersWallet_ThrowsOwnership()
+    {
+        using var db = _fixture.CreateDbContext();
+        var ledgerService = new LedgerService(db);
+        var walletService = new WalletService(db, ledgerService);
+
+        var owner = await TestData.CreateUserAsync(db);
+        var stranger = await TestData.CreateUserAsync(db);
+        var wallet = await TestData.CreateWalletAsync(db, owner.Id, "EUR");
+
+        await Assert.ThrowsAsync<WalletOwnershipException>(
+            () => walletService.DepositAsync(stranger.Id, wallet.Id, 10m));
+    }
+
+    [Fact]
+    public async Task GetWalletsForUser_OnlyReturnsOwnWallets()
+    {
+        using var db = _fixture.CreateDbContext();
+        var ledgerService = new LedgerService(db);
+        var walletService = new WalletService(db, ledgerService);
+
+        var userA = await TestData.CreateUserAsync(db);
+        var userB = await TestData.CreateUserAsync(db);
+        var walletA = await TestData.CreateWalletAsync(db, userA.Id, "EUR");
+        await TestData.CreateWalletAsync(db, userB.Id, "EUR");
+
+        var results = await walletService.GetWalletsForUserAsync(userA.Id);
+
+        Assert.Single(results);
+        Assert.Equal(walletA.Id, results[0].Id);
+    }
 }
