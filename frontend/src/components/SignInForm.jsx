@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { getUserById } from "../services/api";
+import { loginUser } from "../services/api";
 
 function SignInForm({ onUserSignedIn }) {
-  const [userId, setUserId] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -12,11 +13,12 @@ function SignInForm({ onUserSignedIn }) {
     setIsSubmitting(true);
 
     try {
-      const user = await getUserById(userId);
+      const user = await loginUser(email, password);
       onUserSignedIn(user);
-      setUserId("");
+      setEmail("");
+      setPassword("");
     } catch (err) {
-      setError("User not found. Please check the User ID.");
+      setError("Invalid email or password.");
     } finally {
       setIsSubmitting(false);
     }
@@ -26,17 +28,28 @@ function SignInForm({ onUserSignedIn }) {
     <div className="card form-card">
       <div className="form-card-header">
         <h2>Sign In</h2>
-        <p>Enter your temporary user ID to load your dashboard.</p>
+        <p>Enter your email and password to access your dashboard.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="form-grid">
-        <div className="form-field full-width">
-          <label>User ID</label>
+        <div className="form-field">
+          <label>Email</label>
           <input
-            type="text"
-            placeholder="Paste your user ID here"
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)}
+            type="email"
+            placeholder="Example: demetris@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="form-field">
+          <label>Password</label>
+          <input
+            type="password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             required
           />
         </div>
