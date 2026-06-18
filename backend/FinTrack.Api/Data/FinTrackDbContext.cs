@@ -13,6 +13,9 @@ public class FinTrackDbContext : DbContext
     public DbSet<Account> Accounts => Set<Account>();
     public DbSet<Transaction> Transactions => Set<Transaction>();
     public DbSet<Budget> Budgets => Set<Budget>();
+    public DbSet<Wallet> Wallets => Set<Wallet>();
+    public DbSet<LedgerTransaction> LedgerTransactions => Set<LedgerTransaction>();
+    public DbSet<LedgerPosting> LedgerPostings => Set<LedgerPosting>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -84,6 +87,74 @@ public class FinTrackDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasIndex(b => new { b.UserId, b.Category }).IsUnique();
+        });
+
+        modelBuilder.Entity<Wallet>(entity =>
+        {
+            entity.ToTable("wallets");
+            entity.HasKey(w => w.Id);
+            entity.Property(w => w.Currency).IsRequired().HasMaxLength(3);
+            entity.Property(w => w.Status).IsRequired().HasMaxLength(20).HasDefaultValue("active");
+            entity.Property(w => w.IsSystem).HasDefaultValue(false);
+            entity.Property(w => w.CreatedAt)
+                .HasColumnType("timestamp with time zone")
+                .HasDefaultValueSql("now()");
+            entity.Property(w => w.Version).IsConcurrencyToken();
+
+            entity.HasOne(w => w.User)
+                .WithMany(u => u.Wallets)
+                .HasForeignKey(w => w.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(w => new { w.UserId, w.Currency }).IsUnique();
+        });
+
+        modelBuilder.Entity<LedgerTransaction>(entity =>
+        {
+            entity.ToTable("ledger_transactions");
+            entity.HasKey(t => t.Id);
+            entity.Property(t => t.Type).IsRequired().HasMaxLength(20);
+            entity.Property(t => t.Status).IsRequired().HasMaxLength(20).HasDefaultValue("posted");
+            entity.Property(t => t.Currency).IsRequired().HasMaxLength(3);
+            entity.Property(t => t.CreatedAt)
+                .HasColumnType("timestamp with time zone")
+                .HasDefaultValueSql("now()");
+
+            entity.HasOne(t => t.SourceWallet)
+                .WithMany(w => w.OutgoingTransactions)
+                .HasForeignKey(t => t.SourceWalletId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(t => t.DestinationWallet)
+                .WithMany(w => w.IncomingTransactions)
+                .HasForeignKey(t => t.DestinationWalletId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(t => t.SourceWalletId);
+            entity.HasIndex(t => t.DestinationWalletId);
+        });
+
+        modelBuilder.Entity<LedgerPosting>(entity =>
+        {
+            entity.ToTable("ledger_postings");
+            entity.HasKey(p => p.Id);
+            entity.Property(p => p.Direction).IsRequired().HasMaxLength(10);
+            entity.Property(p => p.Currency).IsRequired().HasMaxLength(3);
+            entity.Property(p => p.CreatedAt)
+                .HasColumnType("timestamp with time zone")
+                .HasDefaultValueSql("now()");
+
+            entity.HasOne(p => p.LedgerTransaction)
+                .WithMany(t => t.Postings)
+                .HasForeignKey(p => p.LedgerTransactionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(p => p.Wallet)
+                .WithMany(w => w.Postings)
+                .HasForeignKey(p => p.WalletId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(p => p.WalletId);
         });
     }
 }
