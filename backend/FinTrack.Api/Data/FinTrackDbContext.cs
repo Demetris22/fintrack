@@ -93,6 +93,7 @@ public class FinTrackDbContext : DbContext
         {
             entity.ToTable("wallets");
             entity.HasKey(w => w.Id);
+            entity.Property(w => w.Name).IsRequired().HasMaxLength(100);
             entity.Property(w => w.Currency).IsRequired().HasMaxLength(3);
             entity.Property(w => w.Status).IsRequired().HasMaxLength(20).HasDefaultValue("active");
             entity.Property(w => w.IsSystem).HasDefaultValue(false);
@@ -106,7 +107,12 @@ public class FinTrackDbContext : DbContext
                 .HasForeignKey(w => w.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasIndex(w => new { w.UserId, w.Currency }).IsUnique();
+            // Users may hold multiple wallets per currency. Only the single internal
+            // system wallet per currency (used to fund simulated deposits) is constrained.
+            entity.HasIndex(w => w.UserId);
+            entity.HasIndex(w => w.Currency)
+                .IsUnique()
+                .HasFilter("\"IsSystem\" = true");
         });
 
         modelBuilder.Entity<LedgerTransaction>(entity =>

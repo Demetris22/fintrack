@@ -25,15 +25,12 @@ public class WalletsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateWalletRequest request)
     {
-        try
-        {
-            var wallet = await _walletService.CreateWalletAsync(User.GetUserId(), request.Currency);
-            return CreatedAtAction(nameof(GetById), new { id = wallet.Id }, ToResponse(wallet));
-        }
-        catch (WalletConflictException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
+        var name = string.IsNullOrWhiteSpace(request.Name)
+            ? $"{request.Currency.ToUpperInvariant()} Wallet"
+            : request.Name;
+
+        var wallet = await _walletService.CreateWalletAsync(User.GetUserId(), request.Currency, name);
+        return CreatedAtAction(nameof(GetById), new { id = wallet.Id }, ToResponse(wallet));
     }
 
     [HttpGet]
@@ -124,6 +121,7 @@ public class WalletsController : ControllerBase
     {
         Id = w.Id,
         UserId = w.UserId,
+        Name = w.Name,
         Currency = w.Currency,
         Balance = w.BalanceMinor / 100m,
         Status = w.Status,

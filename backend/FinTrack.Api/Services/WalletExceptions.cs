@@ -10,11 +10,6 @@ public class WalletOwnershipException : Exception
     public WalletOwnershipException(Guid walletId) : base($"Wallet {walletId} does not belong to the current user.") { }
 }
 
-public class WalletConflictException : Exception
-{
-    public WalletConflictException(string message) : base(message) { }
-}
-
 public class WalletNotActiveException : Exception
 {
     public WalletNotActiveException(Guid walletId) : base($"Wallet {walletId} is not active.") { }

@@ -22,12 +22,13 @@ public static class TestData
         return user;
     }
 
-    public static async Task<Wallet> CreateWalletAsync(FinTrackDbContext db, Guid userId, string currency = "EUR", string status = "active")
+    public static async Task<Wallet> CreateWalletAsync(FinTrackDbContext db, Guid userId, string currency = "EUR", string status = "active", string? name = null)
     {
         var wallet = new Wallet
         {
             Id = Guid.NewGuid(),
             UserId = userId,
+            Name = name ?? $"{currency} Wallet",
             Currency = currency,
             BalanceMinor = 0,
             Status = status,
