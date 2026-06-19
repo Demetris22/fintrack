@@ -179,6 +179,22 @@ public class WalletServiceTests
     }
 
     [Fact]
+    public async Task LookupWalletsByEmail_IsCaseInsensitive()
+    {
+        using var db = _fixture.CreateDbContext();
+        var ledgerService = new LedgerService(db);
+        var walletService = new WalletService(db, ledgerService);
+
+        var recipient = await TestData.CreateUserAsync(db);
+        var matchingWallet = await TestData.CreateWalletAsync(db, recipient.Id, "EUR", name: "Spending");
+
+        var result = await walletService.LookupWalletsByEmailAsync(recipient.Email.ToUpperInvariant(), "EUR");
+
+        Assert.NotNull(result);
+        Assert.Equal(new[] { matchingWallet.Id }, result.Value.Wallets.Select(w => w.Id));
+    }
+
+    [Fact]
     public async Task LookupWalletsByEmail_UnknownEmail_ReturnsNull()
     {
         using var db = _fixture.CreateDbContext();

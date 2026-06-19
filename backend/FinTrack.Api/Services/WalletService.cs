@@ -48,8 +48,9 @@ public class WalletService : IWalletService
     public async Task<(string FullName, List<Wallet> Wallets)?> LookupWalletsByEmailAsync(string email, string currency, CancellationToken cancellationToken = default)
     {
         currency = currency.ToUpperInvariant();
+        var normalizedEmail = email.ToLowerInvariant();
 
-        var user = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+        var user = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail, cancellationToken);
         if (user is null)
             return null;
 

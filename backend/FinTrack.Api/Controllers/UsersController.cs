@@ -25,13 +25,15 @@ public class UsersController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateUserRequest request)
     {
-        var emailTaken = await _db.Users.AnyAsync(u => u.Email == request.Email);
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+
+        var emailTaken = await _db.Users.AnyAsync(u => u.Email.ToLower() == normalizedEmail);
         if (emailTaken)
             return Conflict(new { message = "A user with this email already exists." });
 
         var user = new User
         {
-            Email = request.Email,
+            Email = normalizedEmail,
             PasswordHash = HashPassword(request.Password),
             FullName = request.FullName,
         };
@@ -45,8 +47,9 @@ public class UsersController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
         var hash = HashPassword(request.Password);
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == request.Email && u.PasswordHash == hash);
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail && u.PasswordHash == hash);
         if (user is null)
             return Unauthorized(new { message = "Invalid email or password." });
 
