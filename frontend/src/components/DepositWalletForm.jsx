@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { depositToWallet } from "../services/api";
 
 function DepositWalletForm({ wallets, onDepositCompleted }) {
@@ -7,17 +7,29 @@ function DepositWalletForm({ wallets, onDepositCompleted }) {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!walletId && wallets.length > 0) {
-      setWalletId(wallets[0].id);
-    }
-  }, [wallets, walletId]);
+  const effectiveWalletId = walletId || wallets[0]?.id || "";
+  const selectedWallet = wallets.find(
+    (wallet) => wallet.id === effectiveWalletId
+  );
+  const selectedWalletBalance = Number(
+    selectedWallet?.balance ??
+      selectedWallet?.availableBalance ??
+      selectedWallet?.currentBalance ??
+      0
+  );
+
+  function formatCurrency(value, currency = "EUR") {
+    return new Intl.NumberFormat("en-CY", {
+      style: "currency",
+      currency,
+    }).format(Number(value || 0));
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
 
-    if (!walletId) {
+    if (!effectiveWalletId) {
       setError("Please select a wallet.");
       return;
     }
@@ -30,12 +42,12 @@ function DepositWalletForm({ wallets, onDepositCompleted }) {
     try {
       setIsSubmitting(true);
 
-      await depositToWallet(walletId, amount);
+      await depositToWallet(effectiveWalletId, amount);
 
       setAmount("");
 
       if (onDepositCompleted) {
-        onDepositCompleted();
+        await onDepositCompleted();
       }
     } catch (err) {
       setError(err.message);
@@ -51,18 +63,41 @@ function DepositWalletForm({ wallets, onDepositCompleted }) {
         <p>Add funds to one of your existing wallets.</p>
       </div>
 
+      {selectedWallet && (
+        <div className="form-balance-panel">
+          <div>
+            <span>Selected wallet</span>
+            <strong>{selectedWallet.currency} Wallet</strong>
+          </div>
+
+          <div>
+            <span>Current balance</span>
+            <strong>
+              {formatCurrency(selectedWalletBalance, selectedWallet.currency)}
+            </strong>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="form-grid">
         <div className="form-field">
           <label>Wallet</label>
 
           <select
-            value={walletId}
+            value={effectiveWalletId}
             onChange={(e) => setWalletId(e.target.value)}
             required
           >
             {wallets.map((wallet) => (
               <option key={wallet.id} value={wallet.id}>
-                {wallet.currency} Wallet
+                {wallet.currency} Wallet -{" "}
+                {formatCurrency(
+                  wallet.balance ??
+                    wallet.availableBalance ??
+                    wallet.currentBalance ??
+                    0,
+                  wallet.currency
+                )}
               </option>
             ))}
           </select>

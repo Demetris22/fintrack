@@ -86,7 +86,7 @@ function AnalyticsPanel({ userId, transactions }) {
               Total transaction amount grouped by category
             </p>
 
-            <ResponsiveContainer width="100%" height={360}>
+            <ResponsiveContainer width="100%" height={290}>
               <BarChart
                 data={breakdown}
                 margin={{ top: 20, right: 20, left: 20, bottom: 45 }}
@@ -100,7 +100,7 @@ function AnalyticsPanel({ userId, transactions }) {
                 <YAxis tickFormatter={(value) => `€${value}`} />
                 <Tooltip formatter={(value) => [formatCurrency(value), "Total"]} />
 
-                <Bar dataKey="total" radius={[10, 10, 0, 0]}>
+                <Bar dataKey="total" radius={[10, 10, 0, 0]} maxBarSize={95}>
                   {breakdown.map((item, index) => (
                     <Cell
                       key={`cell-${item.category || index}`}

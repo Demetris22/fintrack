@@ -1,10 +1,6 @@
 const API_URL = "http://localhost:8080/api";
 
-function getStoredToken() {
-  return localStorage.getItem("token");
-}
-
-async function request(endpoint, options = {}) {
+async function request(endpoint, options = {}, config = {}) {
   const token = localStorage.getItem("token");
 
   const headers = {
@@ -23,7 +19,7 @@ async function request(endpoint, options = {}) {
 
   const rawText = await response.text();
 
-  let data = null;
+  let data;
 
   try {
     data = rawText ? JSON.parse(rawText) : null;
@@ -39,24 +35,37 @@ async function request(endpoint, options = {}) {
     });
 
     if (response.status === 401) {
-      throw new Error("Your session expired. Please sign out and sign in again.");
+      const error = new Error(
+        config.unauthorizedMessage ||
+          "Your session expired. Please sign out and sign in again."
+      );
+      error.status = response.status;
+      throw error;
     }
 
     if (response.status === 403) {
-      throw new Error("You are not allowed to perform this action.");
+      const error = new Error("You are not allowed to perform this action.");
+      error.status = response.status;
+      throw error;
     }
 
     if (response.status === 409) {
-      throw new Error(data?.message || data?.title || "Wallet already exists.");
+      const error = new Error(
+        data?.message || data?.title || "Wallet already exists."
+      );
+      error.status = response.status;
+      throw error;
     }
 
-    throw new Error(
+    const error = new Error(
       data?.message ||
         data?.title ||
         data?.detail ||
         data ||
         `Request failed with status ${response.status}`
     );
+    error.status = response.status;
+    throw error;
   }
 
   return data;
@@ -74,10 +83,16 @@ export function createUser(user) {
 }
 
 export function loginUser(credentials) {
-  return request("/users/login", {
-    method: "POST",
-    body: JSON.stringify(credentials),
-  });
+  return request(
+    "/users/login",
+    {
+      method: "POST",
+      body: JSON.stringify(credentials),
+    },
+    {
+      unauthorizedMessage: "Invalid email or password.",
+    }
+  );
 }
 
 /* =========================

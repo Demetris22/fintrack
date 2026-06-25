@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createTransaction } from "../services/api";
 import { categoryOptions } from "../utils/categoryStyles";
 
@@ -11,17 +11,15 @@ function CreateTransactionForm({ userId, accounts, onTransactionCreated }) {
   const [transactionDate, setTransactionDate] = useState("");
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (!accountId && accounts.length > 0) {
-      setAccountId(accounts[0].id);
-    }
-  }, [accounts, accountId]);
+  const accountExists = accounts.some((account) => account.id === accountId);
+  const effectiveAccountId =
+    accountExists || accounts.length === 0 ? accountId : accounts[0].id;
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
 
-    if (!accountId) {
+    if (!effectiveAccountId) {
       setError("Please select an account.");
       return;
     }
@@ -34,7 +32,7 @@ function CreateTransactionForm({ userId, accounts, onTransactionCreated }) {
     try {
       const transaction = await createTransaction({
         userId,
-        accountId,
+        accountId: effectiveAccountId,
         amount: Number(amount),
         currency: "EUR",
         merchant,
@@ -66,7 +64,7 @@ function CreateTransactionForm({ userId, accounts, onTransactionCreated }) {
         <div className="form-field">
           <label>Account</label>
           <select
-            value={accountId}
+            value={effectiveAccountId}
             onChange={(e) => setAccountId(e.target.value)}
             required
           >

@@ -1,41 +1,52 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getWalletTransactions } from "../services/api";
 
-function WalletActivityPanel({ wallets }) {
+function WalletActivityPanel({ wallets, refreshKey = 0 }) {
   const [selectedWalletId, setSelectedWalletId] = useState("");
   const [transactions, setTransactions] = useState([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (!selectedWalletId && wallets.length > 0) {
-      setSelectedWalletId(wallets[0].id);
-    }
-  }, [wallets, selectedWalletId]);
+  const selectedWalletExists = wallets.some(
+    (wallet) => wallet.id === selectedWalletId
+  );
+  const activeWalletId =
+    selectedWalletExists || wallets.length === 0
+      ? selectedWalletId
+      : wallets[0].id;
+
+  const loadWalletTransactions = useCallback(
+    async (walletId = activeWalletId) => {
+      if (!walletId) {
+        return;
+      }
+
+      setError("");
+      setIsLoading(true);
+
+      try {
+        const data = await getWalletTransactions(walletId);
+        setTransactions(data || []);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [activeWalletId]
+  );
 
   useEffect(() => {
-    if (selectedWalletId) {
-      loadWalletTransactions(selectedWalletId);
-    }
-  }, [selectedWalletId]);
-
-  async function loadWalletTransactions(walletId = selectedWalletId) {
-    if (!walletId) {
-      return;
+    if (!activeWalletId) {
+      return undefined;
     }
 
-    setError("");
-    setIsLoading(true);
+    const timeoutId = window.setTimeout(() => {
+      loadWalletTransactions(activeWalletId);
+    }, 0);
 
-    try {
-      const data = await getWalletTransactions(walletId);
-      setTransactions(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }
+    return () => window.clearTimeout(timeoutId);
+  }, [activeWalletId, refreshKey, loadWalletTransactions]);
 
   function formatCurrency(amount, currency = "EUR") {
     return new Intl.NumberFormat("en-CY", {
@@ -60,12 +71,15 @@ function WalletActivityPanel({ wallets }) {
 
   function getWalletEffect(transaction) {
     const posting = transaction.postings?.find(
-      (item) => item.walletId === selectedWalletId
+      (item) => item.walletId === activeWalletId
     );
 
     if (!posting) {
+      const isDestination = transaction.destinationWalletId === activeWalletId;
+      const isSource = transaction.sourceWalletId === activeWalletId;
+
       return {
-        sign: "",
+        sign: isDestination ? "+" : isSource ? "-" : "",
         amount: transaction.amount,
         currency: transaction.currency || "EUR",
       };
@@ -108,7 +122,7 @@ function WalletActivityPanel({ wallets }) {
               <label>Select wallet</label>
 
               <select
-                value={selectedWalletId}
+                value={activeWalletId}
                 onChange={(e) => setSelectedWalletId(e.target.value)}
               >
                 {wallets.map((wallet) => (
@@ -122,7 +136,7 @@ function WalletActivityPanel({ wallets }) {
             <button
               type="button"
               onClick={() => loadWalletTransactions()}
-              disabled={!selectedWalletId || isLoading}
+              disabled={!activeWalletId || isLoading}
             >
               {isLoading ? "Loading..." : "Refresh"}
             </button>
@@ -140,19 +154,14 @@ function WalletActivityPanel({ wallets }) {
               {transactions.map((transaction) => {
                 const effect = getWalletEffect(transaction);
                 const isCredit = effect.sign === "+";
+                const amountClass = isCredit ? "credit" : "debit";
 
                 return (
                   <div className="data-row transaction-row" key={transaction.id}>
                     <div>
                       <div className="row-title">
-                        <span
-                          className={
-                            isCredit
-                              ? "activity-icon credit"
-                              : "activity-icon debit"
-                          }
-                        >
-                          {isCredit ? "↓" : "↑"}
+                        <span className={`activity-icon ${amountClass}`}>
+                          {isCredit ? "+" : "-"}
                         </span>
 
                         <h3>{getTransactionLabel(transaction)}</h3>
@@ -163,13 +172,7 @@ function WalletActivityPanel({ wallets }) {
                       <small>{formatDate(transaction.createdAt)}</small>
                     </div>
 
-                    <strong
-                      className={
-                        isCredit
-                          ? "activity-amount credit"
-                          : "activity-amount debit"
-                      }
-                    >
+                    <strong className={`activity-amount ${amountClass}`}>
                       {effect.sign}
                       {formatCurrency(effect.amount, effect.currency)}
                     </strong>

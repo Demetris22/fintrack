@@ -27,7 +27,17 @@ function App() {
     const savedUser = localStorage.getItem("currentUser");
     const savedToken = localStorage.getItem("token");
 
-    return savedUser && savedToken ? JSON.parse(savedUser) : null;
+    if (!savedUser || !savedToken) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(savedUser);
+    } catch {
+      localStorage.removeItem("currentUser");
+      localStorage.removeItem("token");
+      return null;
+    }
   });
 
   const [wallets, setWallets] = useState([]);
@@ -37,13 +47,16 @@ function App() {
 
   const [authMode, setAuthMode] = useState("register");
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [dataError, setDataError] = useState("");
+  const [walletActivityRefreshKey, setWalletActivityRefreshKey] = useState(0);
+  const [copiedWalletId, setCopiedWalletId] = useState("");
 
   const [showWalletForm, setShowWalletForm] = useState(false);
   const [showDepositForm, setShowDepositForm] = useState(false);
+  const [showTransferForm, setShowTransferForm] = useState(false);
   const [showAccountForm, setShowAccountForm] = useState(false);
   const [showTransactionForm, setShowTransactionForm] = useState(false);
   const [showBudgetForm, setShowBudgetForm] = useState(false);
-  const [showTransferForm, setShowTransferForm] = useState(false);
 
   const [transactionSearch, setTransactionSearch] = useState("");
   const [transactionCategoryFilter, setTransactionCategoryFilter] =
@@ -60,33 +73,42 @@ function App() {
 
       localStorage.setItem("currentUser", JSON.stringify(currentUser));
       setIsLoadingData(true);
+      setDataError("");
+
+      function handleLoadError(resourceName, err) {
+        console.error(`Failed to load ${resourceName}:`, err);
+
+        if (err.status === 401) {
+          setDataError("Your session expired. Please sign out and sign in again.");
+        }
+      }
 
       try {
         const walletsData = await getWallets();
         setWallets(walletsData);
       } catch (err) {
-        console.error("Failed to load wallets:", err);
+        handleLoadError("wallets", err);
       }
 
       try {
         const accountsData = await getAccounts(currentUser.id);
         setAccounts(accountsData);
       } catch (err) {
-        console.error("Failed to load accounts:", err);
+        handleLoadError("accounts", err);
       }
 
       try {
         const transactionsData = await getTransactions(currentUser.id);
         setTransactions(transactionsData);
       } catch (err) {
-        console.error("Failed to load transactions:", err);
+        handleLoadError("transactions", err);
       }
 
       try {
         const budgetsData = await getBudgets(currentUser.id);
         setBudgets(budgetsData);
       } catch (err) {
-        console.error("Failed to load budgets:", err);
+        handleLoadError("budgets", err);
       }
 
       setIsLoadingData(false);
@@ -96,10 +118,14 @@ function App() {
   }, [currentUser]);
 
   function formatCurrency(amount, currency = "EUR") {
-    return new Intl.NumberFormat("en-CY", {
-      style: "currency",
-      currency,
-    }).format(Number(amount || 0));
+    try {
+      return new Intl.NumberFormat("en-CY", {
+        style: "currency",
+        currency,
+      }).format(Number(amount || 0));
+    } catch {
+      return `${Number(amount || 0).toFixed(2)} ${currency}`;
+    }
   }
 
   function formatDate(dateString) {
@@ -151,40 +177,34 @@ function App() {
     const type = (accountType || "").toLowerCase();
 
     if (type.includes("wallet")) {
-      return "👛";
+      return "W";
     }
 
     if (type.includes("bank")) {
-      return "🏦";
+      return "B";
     }
 
     if (type.includes("saving")) {
-      return "💰";
+      return "S";
     }
 
     if (type.includes("card")) {
-      return "💳";
+      return "C";
     }
 
-    return "💼";
+    return "A";
   }
 
   function getWalletIcon(currency) {
-    const value = (currency || "").toUpperCase();
+    return (currency || "EUR").slice(0, 3).toUpperCase();
+  }
 
-    if (value === "EUR") {
-      return "€";
+  function getWalletStatusText(status) {
+    if (!status) {
+      return "Active";
     }
 
-    if (value === "USD") {
-      return "$";
-    }
-
-    if (value === "GBP") {
-      return "£";
-    }
-
-    return "💳";
+    return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
   }
 
   function getWalletBalance(wallet) {
@@ -196,18 +216,33 @@ function App() {
       0
     );
   }
+
   async function copyWalletId(walletId) {
-  try {
-    await navigator.clipboard.writeText(walletId);
-    alert("Wallet ID copied.");
-  } catch (err) {
-    console.error("Failed to copy wallet ID:", err);
-    alert("Failed to copy wallet ID.");
+    try {
+      await navigator.clipboard.writeText(walletId);
+      setCopiedWalletId(walletId);
+
+      window.setTimeout(() => {
+        setCopiedWalletId((currentId) =>
+          currentId === walletId ? "" : currentId
+        );
+      }, 1800);
+    } catch (err) {
+      console.error("Failed to copy wallet ID:", err);
+      setDataError("Could not copy wallet ID. You can select it manually.");
+    }
   }
-}
+
+  function handleProtectedActionError(actionName, err) {
+    console.error(`Failed to ${actionName}:`, err);
+
+    if (err.status === 401) {
+      setDataError("Your session expired. Please sign out and sign in again.");
+    }
+  }
 
   function handleWalletCreated(wallet) {
-    setWallets([wallet, ...wallets]);
+    setWallets((currentWallets) => [wallet, ...currentWallets]);
     setShowWalletForm(false);
   }
 
@@ -216,32 +251,38 @@ function App() {
       const walletsData = await getWallets();
       setWallets(walletsData);
       setShowDepositForm(false);
+      setWalletActivityRefreshKey((currentKey) => currentKey + 1);
     } catch (err) {
-      console.error("Failed to refresh wallets:", err);
+      handleProtectedActionError("refresh wallets after deposit", err);
     }
   }
+
   async function handleTransferCompleted() {
-  try {
-    const walletsData = await getWallets();
-    setWallets(walletsData);
-    setShowTransferForm(false);
-  } catch (err) {
-    console.error("Failed to refresh wallets:", err);
+    try {
+      const walletsData = await getWallets();
+      setWallets(walletsData);
+      setShowTransferForm(false);
+      setWalletActivityRefreshKey((currentKey) => currentKey + 1);
+    } catch (err) {
+      handleProtectedActionError("refresh wallets after transfer", err);
+    }
   }
-}
 
   function handleAccountCreated(account) {
-    setAccounts([account, ...accounts]);
+    setAccounts((currentAccounts) => [account, ...currentAccounts]);
     setShowAccountForm(false);
   }
 
   function handleTransactionCreated(transaction) {
-    setTransactions([transaction, ...transactions]);
+    setTransactions((currentTransactions) => [
+      transaction,
+      ...currentTransactions,
+    ]);
     setShowTransactionForm(false);
   }
 
   function handleBudgetCreated(budget) {
-    setBudgets([budget, ...budgets]);
+    setBudgets((currentBudgets) => [budget, ...currentBudgets]);
     setShowBudgetForm(false);
   }
 
@@ -266,6 +307,9 @@ function App() {
     setTransactionSearch("");
     setTransactionCategoryFilter("All");
     setTransactionSort("newest");
+    setDataError("");
+    setCopiedWalletId("");
+    setWalletActivityRefreshKey(0);
 
     setActiveSection("user");
     setAuthMode("register");
@@ -329,13 +373,13 @@ function App() {
   return (
     <div className="app">
       <header className="hero">
-        <div className="hero-badge">💳 Smart finance dashboard</div>
+        <div className="hero-badge">Smart finance dashboard</div>
 
         <h1>FinTrack</h1>
 
         <p>
-          Track wallets, accounts, budgets, transactions and spending insights
-          in one clean dashboard.
+          Track wallets, deposits, transfers, budgets, transactions and spending
+          insights in one clean dashboard.
         </p>
       </header>
 
@@ -359,11 +403,11 @@ function App() {
             </a>
 
             <a
-              href="#accounts"
-              className={activeSection === "accounts" ? "active" : ""}
-              onClick={() => setActiveSection("accounts")}
+              href="#wallet-activity"
+              className={activeSection === "wallet-activity" ? "active" : ""}
+              onClick={() => setActiveSection("wallet-activity")}
             >
-              Accounts
+              Wallet Activity
             </a>
 
             <a
@@ -372,6 +416,14 @@ function App() {
               onClick={() => setActiveSection("analytics")}
             >
               Analytics
+            </a>
+
+            <a
+              href="#accounts"
+              className={activeSection === "accounts" ? "active" : ""}
+              onClick={() => setActiveSection("accounts")}
+            >
+              Accounts
             </a>
           </>
         )}
@@ -453,8 +505,8 @@ function App() {
               </div>
 
               <div>
-                <span>{transactions.length}</span>
-                <p>Transactions</p>
+                <span>{new Set(wallets.map((wallet) => wallet.currency)).size}</span>
+                <p>Currencies</p>
               </div>
 
               <div>
@@ -467,17 +519,23 @@ function App() {
       </section>
 
       {isLoadingData && (
-        <div className="card">
+        <div className="card status-card">
           <p>Loading user data...</p>
+        </div>
+      )}
+
+      {dataError && (
+        <div className="session-alert">
+          <p>{dataError}</p>
         </div>
       )}
 
       {currentUser && (
         <section className="dashboard-summary">
-          <h2 className="section-title">Dashboard Summary</h2>
+          <h2 className="section-title">Wallet Summary</h2>
 
           <SummaryCards
-            accounts={accounts}
+            wallets={wallets}
             transactions={transactions}
             budgets={budgets}
           />
@@ -487,57 +545,57 @@ function App() {
       {currentUser && (
         <>
           <section id="wallets">
-            <div className="section-header">
-  <div className="section-title-block">
-    <h2>Wallets</h2>
-    <p>Create currency wallets, deposit funds, and view balances.</p>
-  </div>
+            <div className="section-header wallet-section-header">
+              <div className="section-title-block">
+                <h2>Wallets</h2>
+                <p>Create currency wallets, deposit funds, and move money.</p>
+              </div>
 
-  <div className="section-actions">
-  <button
-    type="button"
-    onClick={() => {
-      setShowWalletForm(!showWalletForm);
-      setShowDepositForm(false);
-      setShowTransferForm(false);
-    }}
-  >
-    {showWalletForm ? "Cancel" : "+ Add Wallet"}
-  </button>
+              <div className="section-actions">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowWalletForm(!showWalletForm);
+                    setShowDepositForm(false);
+                    setShowTransferForm(false);
+                  }}
+                >
+                  {showWalletForm ? "Cancel" : "+ Add Wallet"}
+                </button>
 
-  <button
-    type="button"
-    disabled={wallets.length === 0}
-    onClick={() => {
-      if (wallets.length === 0) {
-        return;
-      }
+                <button
+                  type="button"
+                  disabled={wallets.length === 0}
+                  onClick={() => {
+                    if (wallets.length === 0) {
+                      return;
+                    }
 
-      setShowDepositForm(!showDepositForm);
-      setShowWalletForm(false);
-      setShowTransferForm(false);
-    }}
-  >
-    {showDepositForm ? "Cancel" : "Deposit"}
-  </button>
+                    setShowDepositForm(!showDepositForm);
+                    setShowWalletForm(false);
+                    setShowTransferForm(false);
+                  }}
+                >
+                  {showDepositForm ? "Cancel" : "Deposit"}
+                </button>
 
-  <button
-    type="button"
-    disabled={wallets.length === 0}
-    onClick={() => {
-      if (wallets.length === 0) {
-        return;
-      }
+                <button
+                  type="button"
+                  disabled={wallets.length === 0}
+                  onClick={() => {
+                    if (wallets.length === 0) {
+                      return;
+                    }
 
-      setShowTransferForm(!showTransferForm);
-      setShowWalletForm(false);
-      setShowDepositForm(false);
-    }}
-  >
-    {showTransferForm ? "Cancel" : "Transfer"}
-  </button>
-</div>
-</div>
+                    setShowTransferForm(!showTransferForm);
+                    setShowWalletForm(false);
+                    setShowDepositForm(false);
+                  }}
+                >
+                  {showTransferForm ? "Cancel" : "Transfer"}
+                </button>
+              </div>
+            </div>
 
             {showWalletForm && (
               <CreateWalletForm onWalletCreated={handleWalletCreated} />
@@ -549,78 +607,111 @@ function App() {
                 onDepositCompleted={handleDepositCompleted}
               />
             )}
-            {showTransferForm && (
-  <TransferWalletForm
-    wallets={wallets}
-    onTransferCompleted={handleTransferCompleted}
-  />
-)}
 
-            <div className="card dashboard-card">
+            {showTransferForm && (
+              <TransferWalletForm
+                wallets={wallets}
+                onTransferCompleted={handleTransferCompleted}
+              />
+            )}
+
+            <div className="card dashboard-card wallet-dashboard-card">
               {wallets.length === 0 ? (
                 <div className="empty-state">
                   <h3>No wallets yet</h3>
                   <p>Create your first wallet to start using wallet transfers.</p>
                 </div>
               ) : (
-                <div className="data-list">
-                  {wallets.map((wallet) => (
-                    <div className="data-row account-row" key={wallet.id}>
-                      <div className="account-left">
-                        <div className="account-icon">
-                          {getWalletIcon(wallet.currency)}
+                <div className="wallet-grid">
+                  {wallets.map((wallet) => {
+                    const statusText = getWalletStatusText(wallet.status);
+                    const statusClass =
+                      statusText.toLowerCase() === "active" ? "active" : "muted";
+
+                    return (
+                      <article className="wallet-card" key={wallet.id}>
+                        <div className="wallet-card-header">
+                          <div className="wallet-title-group">
+                            <div className="wallet-icon">
+                              {getWalletIcon(wallet.currency)}
+                            </div>
+
+                            <div>
+                              <h3>{wallet.currency} Wallet</h3>
+                              <p>Currency wallet</p>
+                            </div>
+                          </div>
+
+                          <span className={`wallet-status ${statusClass}`}>
+                            {statusText}
+                          </span>
                         </div>
 
-                        <div>
-                          <h3>{wallet.currency} Wallet</h3>
-
-                          <p>
-                            Status: {wallet.status || "active"} • Balance
-                            available
-                          </p>
-
-                          <div className="wallet-id-row">
-  <small>Wallet ID: {wallet.id}</small>
-
-  <button
-    type="button"
-    className="copy-button"
-    onClick={() => copyWalletId(wallet.id)}
-  >
-    Copy ID
-  </button>
-</div>
+                        <div className="wallet-balance-block">
+                          <span>Available balance</span>
+                          <strong>
+                            {formatCurrency(
+                              getWalletBalance(wallet),
+                              wallet.currency
+                            )}
+                          </strong>
                         </div>
-                      </div>
 
-                      <strong className="amount">
-                        {formatCurrency(
-                          getWalletBalance(wallet),
-                          wallet.currency
-                        )}
-                      </strong>
-                    </div>
-                  ))}
+                        <div className="wallet-meta-grid">
+                          <div className="wallet-id-block">
+                            <span>Wallet ID</span>
+                            <code title={wallet.id}>{wallet.id}</code>
+                          </div>
+
+                          <button
+                            type="button"
+                            className="copy-button wallet-copy-button"
+                            onClick={() => copyWalletId(wallet.id)}
+                          >
+                            {copiedWalletId === wallet.id ? "Copied" : "Copy ID"}
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
               )}
             </div>
-            
           </section>
-              <section id="wallet-activity">
-  <div className="section-header">
-    <div className="section-title-block">
-      <h2>Wallet Activity</h2>
-      <p>View deposits and transfers recorded for each wallet.</p>
-    </div>
-  </div>
 
-  <WalletActivityPanel wallets={wallets} />
-</section>
-          <section id="accounts">
+          <section id="wallet-activity">
+            <div className="section-header">
+              <div className="section-title-block">
+                <h2>Wallet Activity</h2>
+                <p>View deposits and transfers recorded for each wallet.</p>
+              </div>
+            </div>
+
+            <WalletActivityPanel
+              wallets={wallets}
+              refreshKey={walletActivityRefreshKey}
+            />
+          </section>
+
+          <section id="analytics">
+            <div className="section-header">
+              <div className="section-title-block">
+                <h2>Analytics</h2>
+                <p>Visual insights based on your transaction categories.</p>
+              </div>
+            </div>
+
+            <AnalyticsPanel
+              userId={currentUser.id}
+              transactions={transactions}
+            />
+          </section>
+
+          <section id="accounts" className="legacy-section">
             <div className="section-header">
               <div className="section-title-block">
                 <h2>Accounts</h2>
-                <p>Manage your wallets, bank accounts, cards and savings.</p>
+                <p>Legacy account tools kept below the wallet workspace.</p>
               </div>
 
               <button
@@ -657,7 +748,7 @@ function App() {
                           <h3>{account.name}</h3>
 
                           <p>
-                            {account.institution || "No institution"} •{" "}
+                            {account.institution || "No institution"} -{" "}
                             {account.accountType} account
                           </p>
 
@@ -675,7 +766,7 @@ function App() {
 
           {accounts.length > 0 && (
             <>
-              <section id="transactions">
+              <section id="transactions" className="legacy-section">
                 <div className="section-header">
                   <div className="section-title-block">
                     <h2>Transactions</h2>
@@ -815,7 +906,7 @@ function App() {
                 </div>
               </section>
 
-              <section id="budgets">
+              <section id="budgets" className="legacy-section">
                 <div className="section-header">
                   <div className="section-title-block">
                     <h2>Budgets</h2>
@@ -902,8 +993,8 @@ function App() {
                                   isOverBudget
                                     ? "budget-status danger"
                                     : isWarning
-                                    ? "budget-status warning"
-                                    : "budget-status"
+                                      ? "budget-status warning"
+                                      : "budget-status"
                                 }
                               >
                                 {statusText}
@@ -948,8 +1039,8 @@ function App() {
                                   isOverBudget
                                     ? "progress-fill danger"
                                     : isWarning
-                                    ? "progress-fill warning"
-                                    : "progress-fill"
+                                      ? "progress-fill warning"
+                                      : "progress-fill"
                                 }
                                 style={{ width: `${percentage}%` }}
                               ></div>
@@ -972,26 +1063,12 @@ function App() {
               </section>
             </>
           )}
-
-          <section id="analytics">
-            <div className="section-header">
-              <div className="section-title-block">
-                <h2>Analytics</h2>
-                <p>Visual insights based on your transaction categories.</p>
-              </div>
-            </div>
-
-            <AnalyticsPanel
-              userId={currentUser.id}
-              transactions={transactions}
-            />
-          </section>
         </>
       )}
 
       <footer className="footer">
-        <p>FinTrack © 2026</p>
-        <span>Digital Wallet & Smart Finance Analytics Platform</span>
+        <p>FinTrack (c) 2026</p>
+        <span>Digital Wallet and Smart Finance Analytics Platform</span>
       </footer>
     </div>
   );

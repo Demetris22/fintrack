@@ -27,7 +27,11 @@ function SignInForm({ onUserSignedIn }) {
       setEmail("");
       setPassword("");
     } catch (err) {
-      setError(err.message || "Invalid email or password.");
+      if (err.status === 401) {
+        setError("Invalid email or password.");
+      } else {
+        setError(err.message || "Unable to sign in right now.");
+      }
     } finally {
       setIsSubmitting(false);
     }
