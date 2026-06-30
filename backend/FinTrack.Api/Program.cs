@@ -41,12 +41,11 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendCors", policy =>
     {
-        policy
-            .WithOrigins(
+        policy.WithOrigins(
                 "http://localhost:5173",
-                "http://127.0.0.1:5173"
-                "https://fintrack-beige-eta.vercel.app")
-
+                "http://localhost:5174",
+                "https://fintrack-beige-eta.vercel.app"
+            )
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
