@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 var allowedFrontendOrigins = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -56,20 +57,20 @@ builder.Services.AddCors(options =>
     });
 });
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionString = GetDatabaseConnectionString(builder.Configuration);
 builder.Services.AddDbContext<FinTrackDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<FinTrackDbContext>();
+    db.Database.Migrate();
+}
+
 if (app.Environment.IsDevelopment())
 {
-    using (var scope = app.Services.CreateScope())
-    {
-        var db = scope.ServiceProvider.GetRequiredService<FinTrackDbContext>();
-        db.Database.Migrate();
-    }
-
     app.UseSwagger();
     app.UseSwaggerUI();
 }
@@ -136,4 +137,53 @@ static void AddCorsHeaders(HttpContext context, string origin)
 {
     context.Response.Headers[HeaderNames.AccessControlAllowOrigin] = origin;
     context.Response.Headers[HeaderNames.Vary] = HeaderNames.Origin;
+}
+
+static string GetDatabaseConnectionString(IConfiguration configuration)
+{
+    var connectionString =
+        Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") ??
+        Environment.GetEnvironmentVariable("ConnectionStrings:DefaultConnection") ??
+        BuildConnectionStringFromDatabaseUrl(
+            Environment.GetEnvironmentVariable("DATABASE_URL") ??
+            Environment.GetEnvironmentVariable("POSTGRES_URL")) ??
+        configuration.GetConnectionString("DefaultConnection");
+
+    if (string.IsNullOrWhiteSpace(connectionString))
+    {
+        throw new InvalidOperationException(
+            "Database connection string is not configured. Set ConnectionStrings__DefaultConnection or DATABASE_URL.");
+    }
+
+    return connectionString;
+}
+
+static string? BuildConnectionStringFromDatabaseUrl(string? databaseUrl)
+{
+    if (string.IsNullOrWhiteSpace(databaseUrl))
+    {
+        return null;
+    }
+
+    if (!Uri.TryCreate(databaseUrl, UriKind.Absolute, out var uri))
+    {
+        return databaseUrl;
+    }
+
+    var userInfo = uri.UserInfo.Split(':', 2);
+    var username = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : string.Empty;
+    var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
+    var database = Uri.UnescapeDataString(uri.AbsolutePath.TrimStart('/'));
+
+    var builder = new NpgsqlConnectionStringBuilder
+    {
+        Host = uri.Host,
+        Port = uri.Port > 0 ? uri.Port : 5432,
+        Database = database,
+        Username = username,
+        Password = password,
+        SslMode = SslMode.Require,
+    };
+
+    return builder.ConnectionString;
 }
