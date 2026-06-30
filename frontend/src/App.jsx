@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import "./App.css";
+import heroImage from "./assets/hero.png";
 
 import CreateUserForm from "./components/CreateUserForm";
 import SignInForm from "./components/SignInForm";
@@ -11,7 +13,6 @@ import ToastContainer from "./components/Toast";
 import CreateAccountForm from "./components/CreateAccountForm";
 import CreateTransactionForm from "./components/CreateTransactionForm";
 import CreateBudgetForm from "./components/CreateBudgetForm";
-import AnalyticsPanel from "./components/AnalyticsPanel";
 import SummaryCards from "./components/SummaryCards";
 
 import {
@@ -23,7 +24,66 @@ import {
 
 import { getCategoryStyle } from "./utils/categoryStyles";
 
+const AnalyticsPanel = lazy(() => import("./components/AnalyticsPanel"));
+
+const heroContainer = {
+  hidden: { opacity: 1 },
+  show: {
+    opacity: 1,
+    transition: {
+      delayChildren: 0.06,
+      staggerChildren: 0.08,
+    },
+  },
+};
+
+const heroItem = {
+  hidden: { opacity: 0.92, y: 18 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.72,
+      ease: [0.16, 1, 0.3, 1],
+    },
+  },
+};
+
+const previewWallets = [
+  { id: "preview-eur", currency: "EUR", balance: 8420 },
+  { id: "preview-usd", currency: "USD", balance: 3180 },
+];
+
+const previewTransactions = [
+  { id: "preview-tax", amount: 212.4, category: "Bills" },
+  { id: "preview-shop", amount: 76.2, category: "Shopping" },
+  { id: "preview-health", amount: 48.75, category: "Health" },
+];
+
+const previewBudgets = [
+  { id: "preview-budget-bills", category: "Bills", monthlyLimit: 620 },
+  { id: "preview-budget-food", category: "Food", monthlyLimit: 420 },
+];
+
+function AnalyticsFallback() {
+  return (
+    <div className="card analytics-card analytics-fallback" role="status">
+      <div className="analytics-header">
+        <p>Loading analytics workspace</p>
+      </div>
+
+      <div className="chart-container">
+        <span className="skeleton skeleton-line short"></span>
+        <span className="skeleton skeleton-value"></span>
+        <span className="skeleton skeleton-line"></span>
+        <span className="skeleton skeleton-line"></span>
+      </div>
+    </div>
+  );
+}
+
 function App() {
+  const shouldReduceMotion = useReducedMotion();
   const [currentUser, setCurrentUser] = useState(() => {
     const savedUser = localStorage.getItem("currentUser");
     const savedToken = localStorage.getItem("token");
@@ -192,34 +252,81 @@ function App() {
       sectionIds.push("transactions", "budgets");
     }
 
-    const sections = sectionIds
-      .map((sectionId) => document.getElementById(sectionId))
-      .filter(Boolean);
+    let animationFrameId = 0;
 
-    if (sections.length === 0 || !("IntersectionObserver" in window)) {
-      return undefined;
+    function updateActiveSection() {
+      animationFrameId = 0;
+
+      const sections = sectionIds
+        .map((sectionId) => document.getElementById(sectionId))
+        .filter(Boolean);
+
+      if (sections.length === 0) {
+        return;
+      }
+
+      const readingLine = Math.min(180, window.innerHeight * 0.24);
+      let nextActiveSection = sections[0].id;
+
+      for (const section of sections) {
+        const sectionTop = section.getBoundingClientRect().top;
+
+        if (sectionTop <= readingLine) {
+          nextActiveSection = section.id;
+        } else {
+          break;
+        }
+      }
+
+      const documentHeight = document.documentElement.scrollHeight;
+      const pageBottom =
+        window.innerHeight + window.scrollY >= documentHeight - 8;
+
+      if (pageBottom) {
+        nextActiveSection = sections[sections.length - 1].id;
+      }
+
+      setActiveSection((currentSection) =>
+        currentSection === nextActiveSection ? currentSection : nextActiveSection
+      );
     }
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visibleEntry = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-
-        if (visibleEntry?.target?.id) {
-          setActiveSection(visibleEntry.target.id);
-        }
-      },
-      {
-        rootMargin: "-145px 0px -55% 0px",
-        threshold: [0.08, 0.25, 0.55],
+    function scheduleActiveSectionUpdate() {
+      if (animationFrameId) {
+        return;
       }
-    );
 
-    sections.forEach((section) => observer.observe(section));
+      animationFrameId = window.requestAnimationFrame(updateActiveSection);
+    }
 
-    return () => observer.disconnect();
-  }, [accounts.length, currentUser]);
+    scheduleActiveSectionUpdate();
+
+    window.addEventListener("scroll", scheduleActiveSectionUpdate, {
+      passive: true,
+    });
+    window.addEventListener("resize", scheduleActiveSectionUpdate);
+
+    return () => {
+      if (animationFrameId) {
+        window.cancelAnimationFrame(animationFrameId);
+      }
+
+      window.removeEventListener("scroll", scheduleActiveSectionUpdate);
+      window.removeEventListener("resize", scheduleActiveSectionUpdate);
+    };
+  }, [
+    accounts.length,
+    budgets.length,
+    currentUser,
+    showAccountForm,
+    showBudgetForm,
+    showDepositForm,
+    showTransactionForm,
+    showTransferForm,
+    showWalletForm,
+    transactions.length,
+    wallets.length,
+  ]);
 
   function formatCurrency(amount, currency = "EUR") {
     try {
@@ -507,87 +614,62 @@ function App() {
   );
 
   return (
-    <div className="app">
-      <header className="hero">
-        <div className="hero-badge">Smart finance dashboard</div>
-
-        <h1>FinTrack</h1>
-
-        <p>
-          Track wallets, deposits, transfers, budgets, transactions and spending
-          insights in one clean dashboard.
-        </p>
-      </header>
-
-      <nav className="top-nav">
-        <a
-          href="#user"
-          className={activeSection === "user" ? "active" : ""}
-          onClick={() => setActiveSection("user")}
-        >
-          User
+    <div className={currentUser ? "app app-authenticated" : "app app-landing"}>
+      <header className="site-header">
+        <a className="brand-lockup" href="#user" aria-label="FinTrack home">
+          <span className="brand-mark">FT</span>
+          <span>FinTrack</span>
         </a>
 
-        {currentUser && (
-          <>
-            <a
-              href="#wallets"
-              className={activeSection === "wallets" ? "active" : ""}
-              onClick={() => setActiveSection("wallets")}
-            >
-              Wallets
-            </a>
+        <span className="site-status">
+          {currentUser ? "Dashboard ready" : "Wallets, budgets, insights"}
+        </span>
+      </header>
 
-            <a
-              href="#wallet-activity"
-              className={activeSection === "wallet-activity" ? "active" : ""}
-              onClick={() => setActiveSection("wallet-activity")}
-            >
-              Wallet Activity
-            </a>
+      {!currentUser && (
+        <motion.section
+          id="user"
+          className="landing-hero"
+          initial={shouldReduceMotion ? false : "hidden"}
+          animate="show"
+          variants={heroContainer}
+        >
+          <div className="hero-copy">
+            <motion.div className="hero-badge" variants={heroItem}>
+              Smart finance workspace
+            </motion.div>
 
-            <a
-              href="#analytics"
-              className={activeSection === "analytics" ? "active" : ""}
-              onClick={() => setActiveSection("analytics")}
-            >
-              Analytics
-            </a>
+            <motion.h1 variants={heroItem}>
+              Track money clearly.
+            </motion.h1>
 
-            <a
-              href="#accounts"
-              className={activeSection === "accounts" ? "active" : ""}
-              onClick={() => setActiveSection("accounts")}
-            >
-              Accounts
-            </a>
-          </>
-        )}
+            <motion.p variants={heroItem}>
+              Create wallets, move funds, and spot spending.
+            </motion.p>
 
-        {accounts.length > 0 && (
-          <>
-            <a
-              href="#transactions"
-              className={activeSection === "transactions" ? "active" : ""}
-              onClick={() => setActiveSection("transactions")}
-            >
-              Transactions
-            </a>
+            <motion.div className="hero-preview-summary" variants={heroItem}>
+              <SummaryCards
+                wallets={previewWallets}
+                transactions={previewTransactions}
+                budgets={previewBudgets}
+              />
+            </motion.div>
+          </div>
 
-            <a
-              href="#budgets"
-              className={activeSection === "budgets" ? "active" : ""}
-              onClick={() => setActiveSection("budgets")}
-            >
-              Budgets
-            </a>
-          </>
-        )}
-      </nav>
+          <motion.div className="auth-panel" variants={heroItem}>
+            <div className="auth-panel-header">
+              <img src={heroImage} alt="" aria-hidden="true" />
 
-      <section id="user">
-        {!currentUser && (
-          <>
+              <div>
+                <span>Start here</span>
+                <h2>
+                  {authMode === "register"
+                    ? "Create your workspace"
+                    : "Open your dashboard"}
+                </h2>
+              </div>
+            </div>
+
             <div className="auth-toggle">
               <button
                 type="button"
@@ -621,15 +703,129 @@ function App() {
               <SignInForm
                 onUserSignedIn={(user) => {
                   setCurrentUser(user);
-                  showToast({ type: "success", message: "Signed in successfully." });
+                  showToast({
+                    type: "success",
+                    message: "Signed in successfully.",
+                  });
                 }}
                 onNotify={showToast}
               />
             )}
-          </>
-        )}
+          </motion.div>
+        </motion.section>
+      )}
 
-        {currentUser && (
+      {currentUser && (
+        <motion.header
+          className="dashboard-hero"
+          initial={shouldReduceMotion ? false : "hidden"}
+          animate="show"
+          variants={heroContainer}
+        >
+          <div className="hero-copy">
+            <motion.div className="hero-badge" variants={heroItem}>
+              Live finance dashboard
+            </motion.div>
+
+            <motion.h1 variants={heroItem}>
+              Welcome back, {getDisplayName()}.
+            </motion.h1>
+
+            <motion.p variants={heroItem}>
+              Review balances, move money, and keep budgets visible without
+              digging through spreadsheets.
+            </motion.p>
+          </div>
+
+          <motion.div className="dashboard-hero-panel" variants={heroItem}>
+            <span>Workspace health</span>
+            <strong>{wallets.length + accounts.length}</strong>
+            <p>Connected finance spaces</p>
+          </motion.div>
+        </motion.header>
+      )}
+
+      {currentUser && (
+        <nav className="top-nav" aria-label="Dashboard sections">
+          <a
+            href="#user"
+            className={activeSection === "user" ? "active" : ""}
+            aria-current={activeSection === "user" ? "location" : undefined}
+            onClick={() => setActiveSection("user")}
+          >
+            User
+          </a>
+
+          <a
+            href="#wallets"
+            className={activeSection === "wallets" ? "active" : ""}
+            aria-current={activeSection === "wallets" ? "location" : undefined}
+            onClick={() => setActiveSection("wallets")}
+          >
+            Wallets
+          </a>
+
+          <a
+            href="#wallet-activity"
+            className={activeSection === "wallet-activity" ? "active" : ""}
+            aria-current={
+              activeSection === "wallet-activity" ? "location" : undefined
+            }
+            onClick={() => setActiveSection("wallet-activity")}
+          >
+            Activity
+          </a>
+
+          <a
+            href="#analytics"
+            className={activeSection === "analytics" ? "active" : ""}
+            aria-current={
+              activeSection === "analytics" ? "location" : undefined
+            }
+            onClick={() => setActiveSection("analytics")}
+          >
+            Analytics
+          </a>
+
+          <a
+            href="#accounts"
+            className={activeSection === "accounts" ? "active" : ""}
+            aria-current={activeSection === "accounts" ? "location" : undefined}
+            onClick={() => setActiveSection("accounts")}
+          >
+            Accounts
+          </a>
+
+          {accounts.length > 0 && (
+            <>
+              <a
+                href="#transactions"
+                className={activeSection === "transactions" ? "active" : ""}
+                aria-current={
+                  activeSection === "transactions" ? "location" : undefined
+                }
+                onClick={() => setActiveSection("transactions")}
+              >
+                Transactions
+              </a>
+
+              <a
+                href="#budgets"
+                className={activeSection === "budgets" ? "active" : ""}
+                aria-current={
+                  activeSection === "budgets" ? "location" : undefined
+                }
+                onClick={() => setActiveSection("budgets")}
+              >
+                Budgets
+              </a>
+            </>
+          )}
+        </nav>
+      )}
+
+      {currentUser && (
+        <section id="user">
           <div className="card profile-card">
             <div className="profile-main">
               <div className="profile-avatar">{getUserInitials()}</div>
@@ -666,8 +862,8 @@ function App() {
               </div>
             </div>
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
       {isLoadingData && (
         <div className="loading-strip" role="status">
@@ -909,10 +1105,12 @@ function App() {
               </div>
             </div>
 
-            <AnalyticsPanel
-              userId={currentUser.id}
-              transactions={transactions}
-            />
+            <Suspense fallback={<AnalyticsFallback />}>
+              <AnalyticsPanel
+                userId={currentUser.id}
+                transactions={transactions}
+              />
+            </Suspense>
           </section>
 
           <section id="accounts" className="legacy-section">
@@ -1277,7 +1475,7 @@ function App() {
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
 
       <footer className="footer">
-        <p>FinTrack (c) 2026</p>
+        <p>FinTrack 2026</p>
         <span>Digital Wallet and Smart Finance Analytics Platform</span>
       </footer>
     </div>
