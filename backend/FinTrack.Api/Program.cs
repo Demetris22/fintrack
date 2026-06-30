@@ -3,8 +3,16 @@ using FinTrack.Api.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Net.Http.Headers;
 
 var builder = WebApplication.CreateBuilder(args);
+var allowedFrontendOrigins = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+{
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "https://fintrack-beige-eta.vercel.app",
+    "https://fintrack-git-main-demetris1.vercel.app",
+};
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -42,13 +50,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("FrontendCors", policy =>
     {
         policy
-            .SetIsOriginAllowed(origin =>
-                origin == "http://localhost:5173" ||
-                origin == "http://localhost:5174" ||
-                origin == "https://fintrack-beige-eta.vercel.app" ||
-                origin == "https://fintrack-git-main-demetris1.vercel.app" ||
-                origin.EndsWith(".vercel.app")
-            )
+            .SetIsOriginAllowed(IsAllowedFrontendOrigin)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -72,6 +74,38 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseRouting();
+
+app.Use(async (context, next) =>
+{
+    var origin = context.Request.Headers.Origin.ToString();
+
+    if (!IsAllowedFrontendOrigin(origin))
+    {
+        await next();
+        return;
+    }
+
+    AddCorsHeaders(context, origin);
+
+    if (HttpMethods.IsOptions(context.Request.Method))
+    {
+        var requestedHeaders =
+            context.Request.Headers[HeaderNames.AccessControlRequestHeaders].ToString();
+
+        context.Response.Headers[HeaderNames.AccessControlAllowMethods] =
+            "GET,POST,PUT,PATCH,DELETE,OPTIONS";
+        context.Response.Headers[HeaderNames.AccessControlAllowHeaders] =
+            string.IsNullOrWhiteSpace(requestedHeaders)
+                ? "authorization,content-type"
+                : requestedHeaders;
+        context.Response.StatusCode = StatusCodes.Status204NoContent;
+        return;
+    }
+
+    await next();
+});
+
 app.UseCors("FrontendCors");
 
 app.UseAuthentication();
@@ -80,3 +114,26 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+bool IsAllowedFrontendOrigin(string? origin)
+{
+    if (string.IsNullOrWhiteSpace(origin))
+    {
+        return false;
+    }
+
+    if (allowedFrontendOrigins.Contains(origin))
+    {
+        return true;
+    }
+
+    return Uri.TryCreate(origin, UriKind.Absolute, out var uri) &&
+        uri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) &&
+        uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase);
+}
+
+static void AddCorsHeaders(HttpContext context, string origin)
+{
+    context.Response.Headers[HeaderNames.AccessControlAllowOrigin] = origin;
+    context.Response.Headers[HeaderNames.Vary] = HeaderNames.Origin;
+}
