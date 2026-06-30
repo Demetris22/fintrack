@@ -45,6 +45,7 @@ builder.Services.AddCors(options =>
                 "http://localhost:5173",
                 "http://localhost:5174",
                 "https://fintrack-beige-eta.vercel.app"
+                "https://fintrack-git-main-demetris1.vercel.app"
             )
             .AllowAnyHeader()
             .AllowAnyMethod();
