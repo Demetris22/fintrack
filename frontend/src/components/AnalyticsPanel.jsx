@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { BarChart3, RefreshCw } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -11,6 +12,7 @@ import {
 } from "recharts";
 import { getSpendingByCategory } from "../services/api";
 import { getCategoryStyle } from "../utils/categoryStyles";
+import EmptyState from "./EmptyState";
 
 function AnalyticsPanel({ userId, transactions }) {
   const [breakdown, setBreakdown] = useState([]);
@@ -67,6 +69,7 @@ function AnalyticsPanel({ userId, transactions }) {
 
         <button type="button" onClick={loadAnalytics} disabled={isLoading}>
           {isLoading && <span className="button-spinner" aria-hidden="true"></span>}
+          {!isLoading && <RefreshCw size={16} strokeWidth={1.9} aria-hidden="true" />}
           {isLoading ? "Loading..." : "Refresh"}
         </button>
       </div>
@@ -74,10 +77,11 @@ function AnalyticsPanel({ userId, transactions }) {
       {error && <p className="error">{error}</p>}
 
       {breakdown.length === 0 ? (
-        <div className="empty-state">
-          <h3>No analytics available yet</h3>
-          <p>Add transactions with categories to generate spending insights.</p>
-        </div>
+        <EmptyState
+          icon={BarChart3}
+          title="No analytics available yet"
+          description="Add transactions with categories to generate spending insights."
+        />
       ) : (
         <>
           <div className="analytics-summary">

@@ -1,6 +1,4 @@
-const API_URL = import.meta.env.PROD
-  ? "/api"
-  : import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 async function request(endpoint, options = {}, config = {}) {
   const token = localStorage.getItem("token");

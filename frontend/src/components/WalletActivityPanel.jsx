@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
+import {
+  Activity,
+  ArrowDownLeft,
+  ArrowUpRight,
+  RefreshCw,
+  Wallet,
+} from "lucide-react";
 import { getWalletTransactions } from "../services/api";
+import EmptyState from "./EmptyState";
 
 function WalletActivityPanel({ wallets, refreshKey = 0, onNotify }) {
   const [selectedWalletId, setSelectedWalletId] = useState("");
@@ -114,10 +122,11 @@ function WalletActivityPanel({ wallets, refreshKey = 0, onNotify }) {
   return (
     <div className="card dashboard-card wallet-activity-card">
       {wallets.length === 0 ? (
-        <div className="empty-state" data-empty-label="+">
-          <h3>No wallets available</h3>
-          <p>Create a wallet first to view wallet activity.</p>
-        </div>
+        <EmptyState
+          icon={Wallet}
+          title="No wallets available"
+          description="Create a wallet first to view deposits, transfers, and balance movement."
+        />
       ) : (
         <>
           <div className="wallet-activity-toolbar">
@@ -142,6 +151,7 @@ function WalletActivityPanel({ wallets, refreshKey = 0, onNotify }) {
               disabled={!activeWalletId || isLoading}
             >
               {isLoading && <span className="button-spinner" aria-hidden="true"></span>}
+              {!isLoading && <RefreshCw size={16} strokeWidth={1.9} aria-hidden="true" />}
               {isLoading ? "Loading..." : "Refresh"}
             </button>
           </div>
@@ -164,10 +174,11 @@ function WalletActivityPanel({ wallets, refreshKey = 0, onNotify }) {
               ))}
             </div>
           ) : transactions.length === 0 ? (
-            <div className="empty-state" data-empty-label="0">
-              <h3>No wallet activity yet</h3>
-              <p>Deposits and transfers will appear here as soon as money moves.</p>
-            </div>
+            <EmptyState
+              icon={Activity}
+              title="No wallet activity yet"
+              description="Deposits and transfers will appear here as soon as money moves."
+            />
           ) : (
             <div className="data-list">
               {transactions.map((transaction, index) => {
@@ -184,7 +195,11 @@ function WalletActivityPanel({ wallets, refreshKey = 0, onNotify }) {
                     <div>
                       <div className="row-title">
                         <span className={`activity-icon ${amountClass}`}>
-                          {isCredit ? "+" : "-"}
+                          {isCredit ? (
+                            <ArrowDownLeft size={16} strokeWidth={1.9} aria-hidden="true" />
+                          ) : (
+                            <ArrowUpRight size={16} strokeWidth={1.9} aria-hidden="true" />
+                          )}
                         </span>
 
                         <h3>{getTransactionLabel(transaction)}</h3>

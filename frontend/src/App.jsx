@@ -1,5 +1,18 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
+import {
+  ArrowDown,
+  Copy,
+  Landmark,
+  LogOut,
+  Plus,
+  ReceiptText,
+  Repeat2,
+  Search,
+  Target,
+  Wallet,
+  X,
+} from "lucide-react";
 import "./App.css";
 import heroImage from "./assets/hero.png";
 
@@ -14,6 +27,8 @@ import CreateAccountForm from "./components/CreateAccountForm";
 import CreateTransactionForm from "./components/CreateTransactionForm";
 import CreateBudgetForm from "./components/CreateBudgetForm";
 import SummaryCards from "./components/SummaryCards";
+import EmptyState from "./components/EmptyState";
+import DotGrid from "./components/DotGrid";
 
 import {
   getWallets,
@@ -153,6 +168,29 @@ function App() {
       currentToasts.filter((toast) => toast.id !== toastId)
     );
   }, []);
+
+  const handleSectionNavClick = useCallback(
+    (event, sectionId) => {
+      event.preventDefault();
+
+      const targetSection = document.getElementById(sectionId);
+
+      if (!targetSection) {
+        return;
+      }
+
+      setActiveSection(sectionId);
+      targetSection.scrollIntoView({
+        behavior: shouldReduceMotion ? "auto" : "smooth",
+        block: "start",
+      });
+
+      if (window.location.hash !== `#${sectionId}`) {
+        window.history.replaceState(null, "", `#${sectionId}`);
+      }
+    },
+    [shouldReduceMotion]
+  );
 
   const markWalletsUpdated = useCallback((walletIds = []) => {
     const safeWalletIds = walletIds.filter(Boolean);
@@ -327,6 +365,27 @@ function App() {
     transactions.length,
     wallets.length,
   ]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      return;
+    }
+
+    const activeNavLink = document.querySelector(
+      '.top-nav a[aria-current="location"]'
+    );
+    const topNav = activeNavLink?.closest(".top-nav");
+
+    if (!activeNavLink || !topNav || topNav.scrollWidth <= topNav.clientWidth) {
+      return;
+    }
+
+    activeNavLink.scrollIntoView({
+      behavior: shouldReduceMotion ? "auto" : "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+  }, [activeSection, currentUser, shouldReduceMotion]);
 
   function formatCurrency(amount, currency = "EUR") {
     try {
@@ -614,7 +673,23 @@ function App() {
   );
 
   return (
-    <div className={currentUser ? "app app-authenticated" : "app app-landing"}>
+    <>
+      <DotGrid
+        className="app-dot-grid"
+        dotSize={4}
+        gap={28}
+        baseColor="#2458d3"
+        activeColor="#0f8a5f"
+        proximity={146}
+        speedTrigger={90}
+        shockRadius={230}
+        shockStrength={2.6}
+        resistance={820}
+        returnDuration={1.8}
+        interactive={!shouldReduceMotion}
+      />
+
+      <div className={currentUser ? "app app-authenticated" : "app app-landing"}>
       <header className="site-header">
         <a className="brand-lockup" href="#user" aria-label="FinTrack home">
           <span className="brand-mark">FT</span>
@@ -751,7 +826,7 @@ function App() {
             href="#user"
             className={activeSection === "user" ? "active" : ""}
             aria-current={activeSection === "user" ? "location" : undefined}
-            onClick={() => setActiveSection("user")}
+            onClick={(event) => handleSectionNavClick(event, "user")}
           >
             User
           </a>
@@ -760,7 +835,7 @@ function App() {
             href="#wallets"
             className={activeSection === "wallets" ? "active" : ""}
             aria-current={activeSection === "wallets" ? "location" : undefined}
-            onClick={() => setActiveSection("wallets")}
+            onClick={(event) => handleSectionNavClick(event, "wallets")}
           >
             Wallets
           </a>
@@ -771,7 +846,9 @@ function App() {
             aria-current={
               activeSection === "wallet-activity" ? "location" : undefined
             }
-            onClick={() => setActiveSection("wallet-activity")}
+            onClick={(event) =>
+              handleSectionNavClick(event, "wallet-activity")
+            }
           >
             Activity
           </a>
@@ -782,7 +859,7 @@ function App() {
             aria-current={
               activeSection === "analytics" ? "location" : undefined
             }
-            onClick={() => setActiveSection("analytics")}
+            onClick={(event) => handleSectionNavClick(event, "analytics")}
           >
             Analytics
           </a>
@@ -791,7 +868,7 @@ function App() {
             href="#accounts"
             className={activeSection === "accounts" ? "active" : ""}
             aria-current={activeSection === "accounts" ? "location" : undefined}
-            onClick={() => setActiveSection("accounts")}
+            onClick={(event) => handleSectionNavClick(event, "accounts")}
           >
             Accounts
           </a>
@@ -804,7 +881,9 @@ function App() {
                 aria-current={
                   activeSection === "transactions" ? "location" : undefined
                 }
-                onClick={() => setActiveSection("transactions")}
+                onClick={(event) =>
+                  handleSectionNavClick(event, "transactions")
+                }
               >
                 Transactions
               </a>
@@ -815,7 +894,7 @@ function App() {
                 aria-current={
                   activeSection === "budgets" ? "location" : undefined
                 }
-                onClick={() => setActiveSection("budgets")}
+                onClick={(event) => handleSectionNavClick(event, "budgets")}
               >
                 Budgets
               </a>
@@ -841,6 +920,7 @@ function App() {
                 className="sign-out-button"
                 onClick={handleClearCurrentUser}
               >
+                <LogOut size={16} strokeWidth={1.9} aria-hidden="true" />
                 Sign Out
               </button>
             </div>
@@ -929,7 +1009,17 @@ function App() {
                     setShowTransferForm(false);
                   }}
                 >
-                  {showWalletForm ? "Cancel" : "+ Add Wallet"}
+                  {showWalletForm ? (
+                    <>
+                      <X size={16} strokeWidth={1.9} aria-hidden="true" />
+                      Cancel
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={16} strokeWidth={1.9} aria-hidden="true" />
+                      Add Wallet
+                    </>
+                  )}
                 </button>
 
                 <button
@@ -946,7 +1036,17 @@ function App() {
                     setShowTransferForm(false);
                   }}
                 >
-                  {showDepositForm ? "Cancel" : "Deposit"}
+                  {showDepositForm ? (
+                    <>
+                      <X size={16} strokeWidth={1.9} aria-hidden="true" />
+                      Cancel
+                    </>
+                  ) : (
+                    <>
+                      <ArrowDown size={16} strokeWidth={1.9} aria-hidden="true" />
+                      Deposit
+                    </>
+                  )}
                 </button>
 
                 <button
@@ -963,7 +1063,17 @@ function App() {
                     setShowDepositForm(false);
                   }}
                 >
-                  {showTransferForm ? "Cancel" : "Transfer"}
+                  {showTransferForm ? (
+                    <>
+                      <X size={16} strokeWidth={1.9} aria-hidden="true" />
+                      Cancel
+                    </>
+                  ) : (
+                    <>
+                      <Repeat2 size={16} strokeWidth={1.9} aria-hidden="true" />
+                      Transfer
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -1007,13 +1117,11 @@ function App() {
                   ))}
                 </div>
               ) : wallets.length === 0 ? (
-                <div className="empty-state" data-empty-label="+">
-                  <h3>No wallets yet</h3>
-                  <p>
-                    Create your first wallet with + Add Wallet above, then
-                    deposits and transfers will unlock here.
-                  </p>
-                </div>
+                <EmptyState
+                  icon={Wallet}
+                  title="No wallets yet"
+                  description="Create your first wallet to unlock deposits, transfers, and activity history."
+                />
               ) : (
                 <div className="wallet-grid">
                   {wallets.map((wallet) => {
@@ -1071,6 +1179,7 @@ function App() {
                             title="Copy wallet ID"
                             onClick={() => copyWalletId(wallet.id)}
                           >
+                            <Copy size={15} strokeWidth={1.9} aria-hidden="true" />
                             {copiedWalletId === wallet.id ? "Copied" : "Copy ID"}
                           </button>
                         </div>
@@ -1124,7 +1233,17 @@ function App() {
                 type="button"
                 onClick={() => setShowAccountForm(!showAccountForm)}
               >
-                {showAccountForm ? "Cancel" : "+ Add Account"}
+                {showAccountForm ? (
+                  <>
+                    <X size={16} strokeWidth={1.9} aria-hidden="true" />
+                    Cancel
+                  </>
+                ) : (
+                  <>
+                    <Plus size={16} strokeWidth={1.9} aria-hidden="true" />
+                    Add Account
+                  </>
+                )}
               </button>
             </div>
 
@@ -1137,10 +1256,11 @@ function App() {
 
             <div className="card dashboard-card">
               {accounts.length === 0 ? (
-                <div className="empty-state">
-                  <h3>No accounts yet</h3>
-                  <p>Add your first wallet, bank account, or savings account.</p>
-                </div>
+                <EmptyState
+                  icon={Landmark}
+                  title="No accounts yet"
+                  description="Add a wallet, bank account, or savings account to start organizing your finances."
+                />
               ) : (
                 <div className="data-list">
                   {accounts.map((account) => (
@@ -1185,7 +1305,17 @@ function App() {
                       setShowTransactionForm(!showTransactionForm)
                     }
                   >
-                    {showTransactionForm ? "Cancel" : "+ Add Transaction"}
+                    {showTransactionForm ? (
+                      <>
+                        <X size={16} strokeWidth={1.9} aria-hidden="true" />
+                        Cancel
+                      </>
+                    ) : (
+                      <>
+                        <Plus size={16} strokeWidth={1.9} aria-hidden="true" />
+                        Add Transaction
+                      </>
+                    )}
                   </button>
                 </div>
 
@@ -1199,10 +1329,11 @@ function App() {
 
                 <div className="card dashboard-card">
                   {transactions.length === 0 ? (
-                    <div className="empty-state">
-                      <h3>No transactions yet</h3>
-                      <p>Add your first transaction to start tracking spending.</p>
-                    </div>
+                    <EmptyState
+                      icon={ReceiptText}
+                      title="No transactions yet"
+                      description="Add your first transaction to start tracking spending patterns."
+                    />
                   ) : (
                     <>
                       <div className="transaction-tools">
@@ -1252,10 +1383,11 @@ function App() {
                       </div>
 
                       {filteredTransactions.length === 0 ? (
-                        <div className="empty-state">
-                          <h3>No matching transactions</h3>
-                          <p>Try changing your search or category filter.</p>
-                        </div>
+                        <EmptyState
+                          icon={Search}
+                          title="No matching transactions"
+                          description="Try adjusting the search term, category filter, or sort order."
+                        />
                       ) : (
                         <div className="data-list">
                           {sortedFilteredTransactions.map((transaction) => {
@@ -1323,7 +1455,17 @@ function App() {
                     type="button"
                     onClick={() => setShowBudgetForm(!showBudgetForm)}
                   >
-                    {showBudgetForm ? "Cancel" : "+ Add Budget"}
+                    {showBudgetForm ? (
+                      <>
+                        <X size={16} strokeWidth={1.9} aria-hidden="true" />
+                        Cancel
+                      </>
+                    ) : (
+                      <>
+                        <Plus size={16} strokeWidth={1.9} aria-hidden="true" />
+                        Add Budget
+                      </>
+                    )}
                   </button>
                 </div>
 
@@ -1336,10 +1478,11 @@ function App() {
 
                 <div className="card dashboard-card">
                   {budgets.length === 0 ? (
-                    <div className="empty-state">
-                      <h3>No budgets yet</h3>
-                      <p>Create monthly category limits for your spending.</p>
-                    </div>
+                    <EmptyState
+                      icon={Target}
+                      title="No budgets yet"
+                      description="Create monthly category limits to keep spending visible."
+                    />
                   ) : (
                     <div className="data-list">
                       {budgets.map((budget) => {
@@ -1478,7 +1621,8 @@ function App() {
         <p>FinTrack 2026</p>
         <span>Digital Wallet and Smart Finance Analytics Platform</span>
       </footer>
-    </div>
+      </div>
+    </>
   );
 }
 
