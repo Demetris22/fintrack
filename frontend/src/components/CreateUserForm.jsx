@@ -80,7 +80,7 @@ function CreateUserForm({ onUserCreated, onNotify }) {
 
         <div className="form-actions full-width">
           <Button type="submit" isLoading={isSubmitting}>
-            {isSubmitting ? "Creating..." : "Create User"}
+            {isSubmitting ? "Creating…" : "Create User"}
           </Button>
         </div>
       </form>

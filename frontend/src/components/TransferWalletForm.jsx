@@ -72,7 +72,7 @@ function TransferWalletForm({ wallets, onTransferCompleted, onNotify }) {
       return walletId;
     }
 
-    return `${walletId.slice(0, 6)}...${walletId.slice(-6)}`;
+    return `${walletId.slice(0, 6)}…${walletId.slice(-6)}`;
   }
 
   async function handleSubmit(e) {
@@ -288,7 +288,7 @@ function TransferWalletForm({ wallets, onTransferCompleted, onNotify }) {
             disabled={isSubmitting || !isTransferReady}
             isLoading={isSubmitting}
           >
-            {isSubmitting ? "Transferring..." : "Transfer Funds"}
+            {isSubmitting ? "Transferring…" : "Transfer Funds"}
           </Button>
         </div>
       </form>

@@ -357,6 +357,32 @@ li {
   margin-top: 26px;
 }
 
+.landing-benefit-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.landing-benefit-strip li {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.68);
+  color: var(--muted);
+  padding: 0 11px;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 8px 18px rgba(25, 43, 72, 0.05);
+}
+
+.landing-benefit-strip svg {
+  color: var(--accent-strong);
+}
+
 .hero-badge {
   width: fit-content;
   margin-bottom: 16px;
@@ -694,17 +720,38 @@ li {
   color: var(--danger);
 }
 
-.top-nav {
+.top-nav-shell {
   position: sticky;
   top: 14px;
   z-index: 20;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto 26px;
+}
+
+.top-nav-shell::after {
+  content: "";
+  position: absolute;
+  top: 9px;
+  right: 1px;
+  bottom: 9px;
+  width: 34px;
+  border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.92));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s var(--ease);
+}
+
+.top-nav {
+  position: relative;
   min-height: 58px;
   display: flex;
   align-items: center;
   gap: 6px;
-  width: fit-content;
+  width: 100%;
   max-width: 100%;
-  margin: 0 auto 26px;
+  margin: 0;
   padding: 7px;
   overflow-x: auto;
   border: 1px solid rgba(217, 226, 238, 0.86);
@@ -766,14 +813,14 @@ section {
   box-shadow: var(--shadow);
 }
 
-.dashboard-hero-panel span {
+.dashboard-hero-panel > span {
   display: block;
   color: #b9c5d6;
   font-size: 13px;
   font-weight: 750;
 }
 
-.dashboard-hero-panel strong {
+.dashboard-hero-panel > strong {
   display: block;
   margin-top: 12px;
   color: #ffffff;
@@ -784,6 +831,40 @@ section {
 .dashboard-hero-panel p {
   margin: 8px 0 0;
   color: #dce5ef;
+}
+
+.health-checklist {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.health-row {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-control);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0 11px;
+}
+
+.health-row span,
+.health-row strong {
+  color: #dce5ef;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.health-row.complete {
+  border-color: rgba(99, 211, 159, 0.3);
+  background: rgba(99, 211, 159, 0.11);
+}
+
+.health-row.complete strong {
+  color: #a8f0ca;
 }
 
 .profile-card {
@@ -1847,6 +1928,18 @@ select:focus-visible,
   }
 }
 
+@keyframes gentleReveal {
+  from {
+    opacity: 0.92;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes toastIn {
   from {
     opacity: 0;
@@ -1878,7 +1971,7 @@ select:focus-visible,
 
 @media (prefers-reduced-motion: no-preference) {
   .landing-feature-card {
-    animation: rowReveal 0.52s var(--ease) both;
+    animation: gentleReveal 0.48s var(--ease) both;
     animation-delay: calc(var(--feature-index) * 70ms);
   }
 }
@@ -1942,6 +2035,7 @@ select:focus-visible,
 
   .auth-panel-header,
   .auth-toggle,
+  .landing-benefit-strip li,
   .card,
   .summary-card,
   .wallet-card,
@@ -1990,6 +2084,10 @@ select:focus-visible,
   .ui-button-secondary:hover {
     background: var(--surface-muted);
     color: var(--accent-strong);
+  }
+
+  .top-nav-shell::after {
+    background: linear-gradient(90deg, transparent, rgba(21, 28, 40, 0.94));
   }
 
   .landing-feature-card,
@@ -2131,6 +2229,16 @@ select:focus-visible,
     margin-top: 22px;
   }
 
+  .landing-benefit-strip {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 14px;
+  }
+
+  .landing-benefit-strip li {
+    justify-content: center;
+  }
+
   .landing-hero-actions .ui-button,
   .landing-cta-panel .ui-button {
     width: 100%;
@@ -2246,6 +2354,16 @@ select:focus-visible,
     width: 100%;
     justify-content: flex-start;
     border-radius: 18px;
+  }
+
+  .top-nav-shell {
+    width: 100%;
+    margin-bottom: 26px;
+  }
+
+  .top-nav-shell::after {
+    border-radius: 0 18px 18px 0;
+    opacity: 1;
   }
 
   .toast-region {

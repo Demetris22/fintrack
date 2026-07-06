@@ -68,7 +68,7 @@ function SignInForm({ onUserSignedIn, onNotify }) {
 
         <div className="form-actions full-width">
           <Button type="submit" isLoading={isSubmitting}>
-            {isSubmitting ? "Signing in..." : "Sign In"}
+            {isSubmitting ? "Signing in…" : "Sign In"}
           </Button>
         </div>
       </form>

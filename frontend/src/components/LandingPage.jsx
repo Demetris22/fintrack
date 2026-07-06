@@ -4,6 +4,7 @@ import {
   ChartNoAxesCombined,
   Landmark,
   ReceiptText,
+  Repeat2,
   ShieldCheck,
   Wallet,
 } from "lucide-react";
@@ -25,7 +26,7 @@ const heroContainer = {
 };
 
 const heroItem = {
-  hidden: { opacity: 0, y: 18 },
+  hidden: { opacity: 0.94, y: 14 },
   show: {
     opacity: 1,
     y: 0,
@@ -73,6 +74,13 @@ const featureCards = [
     description: "Keep accounts, cards, and currency balances organized around the same profile.",
     icon: Landmark,
   },
+];
+
+const benefitItems = [
+  { label: "Wallets", icon: Wallet },
+  { label: "Transfers", icon: Repeat2 },
+  { label: "Budgets", icon: ChartNoAxesCombined },
+  { label: "Insights", icon: ReceiptText },
 ];
 
 function LandingPage({
@@ -129,6 +137,19 @@ function LandingPage({
             </Button>
           </motion.div>
 
+          <motion.ul className="landing-benefit-strip" variants={heroItem}>
+            {benefitItems.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <li key={item.label}>
+                  <Icon size={15} strokeWidth={1.9} aria-hidden="true" />
+                  {item.label}
+                </li>
+              );
+            })}
+          </motion.ul>
+
           <motion.div className="hero-preview-summary" variants={heroItem}>
             <SummaryCards
               wallets={previewWallets}
@@ -180,7 +201,7 @@ function LandingPage({
 
       <motion.section
         className="landing-feature-section"
-        initial={shouldReduceMotion ? false : { opacity: 0, y: 18 }}
+        initial={shouldReduceMotion ? false : { opacity: 0.96, y: 12 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.24 }}
         transition={{ duration: 0.68, ease: [0.16, 1, 0.3, 1] }}
@@ -217,7 +238,7 @@ function LandingPage({
 
       <motion.section
         className="landing-cta-panel"
-        initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
+        initial={shouldReduceMotion ? false : { opacity: 0.96, y: 10 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.35 }}
         transition={{ duration: 0.64, ease: [0.16, 1, 0.3, 1] }}

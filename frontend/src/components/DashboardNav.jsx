@@ -16,19 +16,21 @@ function DashboardNav({ activeSection, accountsLength = 0, onNavigate }) {
     accountsLength > 0 ? [...baseNavItems, ...accountNavItems] : baseNavItems;
 
   return (
-    <nav className="top-nav" aria-label="Dashboard sections">
-      {navItems.map((item) => (
-        <a
-          href={`#${item.id}`}
-          className={activeSection === item.id ? "active" : ""}
-          aria-current={activeSection === item.id ? "location" : undefined}
-          key={item.id}
-          onClick={(event) => onNavigate(event, item.id)}
-        >
-          {item.label}
-        </a>
-      ))}
-    </nav>
+    <div className="top-nav-shell">
+      <nav className="top-nav" aria-label="Dashboard sections">
+        {navItems.map((item) => (
+          <a
+            href={`#${item.id}`}
+            className={activeSection === item.id ? "active" : ""}
+            aria-current={activeSection === item.id ? "location" : undefined}
+            key={item.id}
+            onClick={(event) => onNavigate(event, item.id)}
+          >
+            {item.label}
+          </a>
+        ))}
+      </nav>
+    </div>
   );
 }
 

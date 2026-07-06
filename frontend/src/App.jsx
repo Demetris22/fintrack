@@ -670,6 +670,17 @@ function App() {
     0
   );
 
+  const walletCurrencyCount = new Set(
+    wallets.map((wallet) => wallet.currency || "EUR")
+  ).size;
+  const connectedSpaceCount = wallets.length + accounts.length + budgets.length;
+  const setupAreas = [
+    { label: "Wallets", value: wallets.length },
+    { label: "Accounts", value: accounts.length },
+    { label: "Budgets", value: budgets.length },
+  ];
+  const activeSetupAreaCount = setupAreas.filter((area) => area.value > 0).length;
+
   return (
     <>
       <DotGrid
@@ -745,9 +756,21 @@ function App() {
           </div>
 
           <motion.div className="dashboard-hero-panel" variants={heroItem}>
-            <span>Workspace health</span>
-            <strong>{wallets.length + accounts.length}</strong>
-            <p>Connected finance spaces</p>
+            <span>Connected Spaces</span>
+            <strong>{connectedSpaceCount}</strong>
+            <p>{activeSetupAreaCount} of 3 setup areas active</p>
+
+            <div className="health-checklist" aria-label="Workspace setup status">
+              {setupAreas.map((area) => (
+                <div
+                  className={area.value > 0 ? "health-row complete" : "health-row"}
+                  key={area.label}
+                >
+                  <span>{area.label}</span>
+                  <strong>{area.value}</strong>
+                </div>
+              ))}
+            </div>
           </motion.div>
         </motion.header>
       )}
@@ -767,9 +790,9 @@ function App() {
               <div className="profile-avatar">{getUserInitials()}</div>
 
               <div className="profile-info">
-                <p className="welcome-label">Welcome back</p>
-                <h2>{getDisplayName()}</h2>
-                <p>{currentUser.email}</p>
+                <p className="welcome-label">Workspace Overview</p>
+                <h2>Session and Setup</h2>
+                <p>Signed in as {currentUser.email}</p>
               </div>
 
               <Button
@@ -789,7 +812,7 @@ function App() {
               </div>
 
               <div>
-                <span>{new Set(wallets.map((wallet) => wallet.currency)).size}</span>
+                <span>{walletCurrencyCount}</span>
                 <p>Currencies</p>
               </div>
 
@@ -805,7 +828,7 @@ function App() {
       {isLoadingData && (
         <div className="loading-strip" role="status">
           <span className="loading-dot" aria-hidden="true"></span>
-          <p>Refreshing your dashboard...</p>
+          <p>Refreshing your dashboard…</p>
         </div>
       )}
 
@@ -823,7 +846,7 @@ function App() {
               : "dashboard-summary"
           }
         >
-          <h2 className="section-title">Wallet Summary</h2>
+          <h2 className="section-title">Money Overview</h2>
 
           {isLoadingData ? (
             <div className="summary-grid skeleton-grid" aria-hidden="true">
@@ -858,6 +881,11 @@ function App() {
                 <>
                   <Button
                     type="button"
+                    variant={
+                      wallets.length === 0 || showWalletForm
+                        ? "primary"
+                        : "secondary"
+                    }
                     className={
                       showWalletForm ? "action-toggle active" : "action-toggle"
                     }
@@ -882,6 +910,7 @@ function App() {
 
                   <Button
                     type="button"
+                    variant={showDepositForm ? "primary" : "secondary"}
                     className={
                       showDepositForm ? "action-toggle active" : "action-toggle"
                     }
@@ -915,6 +944,7 @@ function App() {
 
                   <Button
                     type="button"
+                    variant={showTransferForm ? "primary" : "secondary"}
                     className={
                       showTransferForm
                         ? "action-toggle active"
@@ -994,7 +1024,19 @@ function App() {
                   icon={Wallet}
                   title="No wallets yet"
                   description="Create your first wallet to unlock deposits, transfers, and activity history."
-                />
+                >
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setShowWalletForm(true);
+                      setShowDepositForm(false);
+                      setShowTransferForm(false);
+                    }}
+                  >
+                    <Plus size={16} strokeWidth={1.9} aria-hidden="true" />
+                    Create First Wallet
+                  </Button>
+                </EmptyState>
               ) : (
                 <div className="wallet-grid">
                   {wallets.map((wallet) => {
@@ -1094,7 +1136,7 @@ function App() {
           <section id="accounts" className="legacy-section">
             <SectionHeader
               title="Accounts"
-              description="Legacy account tools kept below the wallet workspace."
+              description="Connect bank accounts, cards, or savings spaces to organize your finances."
               actions={
                 <Button
                   type="button"
@@ -1206,7 +1248,7 @@ function App() {
                       <div className="transaction-tools">
                         <TextInput
                           type="text"
-                          placeholder="Search transactions..."
+                          placeholder="Search transactions…"
                           value={transactionSearch}
                           onChange={(e) =>
                             setTransactionSearch(e.target.value)

@@ -84,7 +84,7 @@ function CreateBudgetForm({ userId, onBudgetCreated }) {
 
         <div className="form-actions full-width">
           <Button type="submit" isLoading={isSubmitting}>
-            {isSubmitting ? "Creating..." : "Create Budget"}
+            {isSubmitting ? "Creating…" : "Create Budget"}
           </Button>
         </div>
       </form>

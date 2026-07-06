@@ -146,7 +146,7 @@ function DepositWalletForm({ wallets, onDepositCompleted, onNotify }) {
             disabled={isSubmitting || !canSubmit}
             isLoading={isSubmitting}
           >
-            {isSubmitting ? "Depositing..." : "Deposit"}
+            {isSubmitting ? "Depositing…" : "Deposit"}
           </Button>
         </div>
       </form>

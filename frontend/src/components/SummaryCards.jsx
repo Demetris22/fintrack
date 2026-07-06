@@ -89,9 +89,9 @@ function SummaryCards({
 
       <div className="summary-card">
         <div className="summary-icon orange">TX</div>
-        <h3>Legacy Spending</h3>
+        <h3>Tracked Spending</h3>
         <p className="summary-value">{formatCurrency(totalSpending)}</p>
-        <span className="summary-subtext">Across old transactions</span>
+        <span className="summary-subtext">Across transactions</span>
       </div>
 
       <div className="summary-card">

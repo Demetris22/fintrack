@@ -84,7 +84,7 @@ function CreateAccountForm({ userId, onAccountCreated }) {
 
         <div className="form-actions full-width">
           <Button type="submit" isLoading={isSubmitting}>
-            {isSubmitting ? "Creating..." : "Create Account"}
+            {isSubmitting ? "Creating…" : "Create Account"}
           </Button>
         </div>
       </form>
