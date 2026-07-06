@@ -46,6 +46,7 @@ import {
 import { getCategoryStyle } from "./utils/categoryStyles";
 
 const AnalyticsPanel = lazy(() => import("./components/AnalyticsPanel"));
+const LedgerScene3D = lazy(() => import("./components/LedgerScene3D"));
 
 const heroContainer = {
   hidden: { opacity: 1 },
@@ -681,8 +682,86 @@ function App() {
   ];
   const activeSetupAreaCount = setupAreas.filter((area) => area.value > 0).length;
 
+  useEffect(() => {
+    if (shouldReduceMotion) {
+      return undefined;
+    }
+
+    const interactiveSelector = [
+      ".card",
+      ".summary-card",
+      ".wallet-card",
+      ".data-row",
+      ".budget-card",
+      ".landing-feature-card",
+      ".landing-cta-panel",
+      ".dashboard-hero",
+      ".dashboard-hero-panel",
+      ".empty-state",
+      ".auth-panel-header",
+      ".top-nav",
+    ].join(",");
+
+    const resetSurface = (surface) => {
+      surface.classList.remove("is-tilting");
+      surface.style.removeProperty("--tilt-x");
+      surface.style.removeProperty("--tilt-y");
+      surface.style.removeProperty("--glare-x");
+      surface.style.removeProperty("--glare-y");
+    };
+
+    const handlePointerMove = (event) => {
+      const surface = event.target.closest(interactiveSelector);
+
+      if (!surface) {
+        return;
+      }
+
+      const rect = surface.getBoundingClientRect();
+      const x = (event.clientX - rect.left) / rect.width;
+      const y = (event.clientY - rect.top) / rect.height;
+      const rotateY = (x - 0.5) * 7;
+      const rotateX = (0.5 - y) * 7;
+
+      surface.classList.add("is-tilting");
+      surface.style.setProperty("--tilt-x", `${rotateX.toFixed(2)}deg`);
+      surface.style.setProperty("--tilt-y", `${rotateY.toFixed(2)}deg`);
+      surface.style.setProperty("--glare-x", `${(x * 100).toFixed(1)}%`);
+      surface.style.setProperty("--glare-y", `${(y * 100).toFixed(1)}%`);
+    };
+
+    const handlePointerOut = (event) => {
+      const surface = event.target.closest(interactiveSelector);
+
+      if (!surface || surface.contains(event.relatedTarget)) {
+        return;
+      }
+
+      resetSurface(surface);
+    };
+
+    document.addEventListener("pointermove", handlePointerMove, {
+      passive: true,
+    });
+    document.addEventListener("pointerout", handlePointerOut);
+
+    return () => {
+      document.removeEventListener("pointermove", handlePointerMove);
+      document.removeEventListener("pointerout", handlePointerOut);
+      document
+        .querySelectorAll(".is-tilting")
+        .forEach((surface) => resetSurface(surface));
+    };
+  }, [shouldReduceMotion]);
+
   return (
     <>
+      {!shouldReduceMotion && (
+        <Suspense fallback={null}>
+          <LedgerScene3D />
+        </Suspense>
+      )}
+
       <DotGrid
         className="app-dot-grid"
         dotSize={4}
