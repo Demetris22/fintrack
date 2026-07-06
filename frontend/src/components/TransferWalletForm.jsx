@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { transferBetweenWallets } from "../services/api";
+import { Button, FormCard, FormField, SelectInput, TextInput } from "./ui";
 
 function TransferWalletForm({ wallets, onTransferCompleted, onNotify }) {
   const [sourceWalletId, setSourceWalletId] = useState("");
@@ -135,12 +136,10 @@ function TransferWalletForm({ wallets, onTransferCompleted, onNotify }) {
   }
 
   return (
-    <div className="card form-card">
-      <div className="form-card-header">
-        <h2>Transfer Funds</h2>
-        <p>Move money from one wallet to another wallet securely.</p>
-      </div>
-
+    <FormCard
+      title="Transfer Funds"
+      description="Move money from one wallet to another wallet securely."
+    >
       {selectedWallet && (
         <div className="transfer-review-panel">
           <div>
@@ -176,10 +175,8 @@ function TransferWalletForm({ wallets, onTransferCompleted, onNotify }) {
       )}
 
       <form onSubmit={handleSubmit} className="form-grid">
-        <div className="form-field">
-          <label>Source wallet</label>
-
-          <select
+        <FormField label="Source wallet">
+          <SelectInput
             value={effectiveSourceWalletId}
             onChange={(e) => handleSourceWalletChange(e.target.value)}
             required
@@ -196,19 +193,15 @@ function TransferWalletForm({ wallets, onTransferCompleted, onNotify }) {
                 )}
               </option>
             ))}
-          </select>
-        </div>
+          </SelectInput>
+        </FormField>
 
-        <div className="form-field">
-          <label>Currency</label>
+        <FormField label="Currency">
+          <TextInput type="text" value={effectiveCurrency} readOnly />
+        </FormField>
 
-          <input type="text" value={effectiveCurrency} readOnly />
-        </div>
-
-        <div className="form-field full-width">
-          <label>Destination wallet ID</label>
-
-          <input
+        <FormField label="Destination wallet ID" fullWidth>
+          <TextInput
             type="text"
             placeholder="Paste destination wallet ID"
             value={destinationWalletId}
@@ -225,12 +218,10 @@ function TransferWalletForm({ wallets, onTransferCompleted, onNotify }) {
               Source and destination wallets cannot be the same.
             </small>
           )}
-        </div>
+        </FormField>
 
-        <div className="form-field">
-          <label>Amount</label>
-
-          <input
+        <FormField label="Amount">
+          <TextInput
             type="number"
             step="0.01"
             placeholder="Example: 30"
@@ -250,18 +241,16 @@ function TransferWalletForm({ wallets, onTransferCompleted, onNotify }) {
               Amount must be greater than 0.
             </small>
           )}
-        </div>
+        </FormField>
 
-        <div className="form-field">
-          <label>Description</label>
-
-          <input
+        <FormField label="Description">
+          <TextInput
             type="text"
             placeholder="Optional transfer note"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
-        </div>
+        </FormField>
 
         {(trimmedDestinationWalletId || amountNumber > 0 || description) && (
           <div
@@ -293,19 +282,19 @@ function TransferWalletForm({ wallets, onTransferCompleted, onNotify }) {
         )}
 
         <div className="form-actions full-width">
-          <button
+          <Button
             type="submit"
             className={isTransferReady ? "submit-ready" : ""}
             disabled={isSubmitting || !isTransferReady}
+            isLoading={isSubmitting}
           >
-            {isSubmitting && <span className="button-spinner" aria-hidden="true"></span>}
             {isSubmitting ? "Transferring..." : "Transfer Funds"}
-          </button>
+          </Button>
         </div>
       </form>
 
       {error && <p className="error">{error}</p>}
-    </div>
+    </FormCard>
   );
 }
 

@@ -120,6 +120,46 @@ button svg {
   flex: 0 0 auto;
 }
 
+.ui-button {
+  position: relative;
+}
+
+.ui-button-secondary {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.74);
+  color: var(--text);
+  box-shadow: var(--shadow-soft);
+}
+
+.ui-button-secondary:hover {
+  border-color: var(--line-strong);
+  background: var(--surface);
+  color: var(--accent-strong);
+  box-shadow: 0 14px 30px rgba(25, 43, 72, 0.12);
+}
+
+.ui-button-ghost {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  box-shadow: none;
+}
+
+.ui-button-ghost:hover {
+  border-color: var(--line);
+  background: var(--surface-muted);
+  color: var(--text);
+  box-shadow: none;
+}
+
+.ui-button-secondary:disabled,
+.ui-button-ghost:disabled {
+  border-color: var(--line);
+  background: var(--surface-strong);
+  color: var(--subtle);
+  box-shadow: none;
+}
+
 input,
 select {
   width: 100%;
@@ -277,8 +317,8 @@ li {
 }
 
 .landing-hero {
-  min-height: calc(100dvh - 104px);
-  padding: 28px 0 64px;
+  min-height: auto;
+  padding: clamp(34px, 7vw, 78px) 0 clamp(42px, 6vw, 72px);
 }
 
 .dashboard-hero {
@@ -295,6 +335,26 @@ li {
 
 .hero-copy {
   max-width: 650px;
+}
+
+.landing-hero-copy {
+  max-width: 700px;
+}
+
+.landing-hero-copy h1 {
+  max-width: 660px;
+}
+
+.landing-hero-copy p {
+  max-width: 500px;
+}
+
+.landing-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 26px;
 }
 
 .hero-badge {
@@ -357,7 +417,20 @@ li {
 }
 
 .auth-panel {
+  position: relative;
   min-width: 0;
+}
+
+.auth-panel::before {
+  content: "";
+  position: absolute;
+  inset: -14px;
+  z-index: -1;
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(36, 88, 211, 0.1), transparent 42%),
+    linear-gradient(315deg, rgba(15, 138, 95, 0.08), transparent 48%);
+  opacity: 0.9;
 }
 
 .auth-panel-header {
@@ -450,6 +523,107 @@ li {
 
 .auth-panel .form-card {
   box-shadow: var(--shadow);
+}
+
+.landing-feature-section {
+  margin: 0 0 36px;
+  padding: clamp(34px, 6vw, 64px) 0 8px;
+}
+
+.landing-section-copy {
+  max-width: 760px;
+  margin-bottom: 22px;
+}
+
+.landing-section-copy h2,
+.landing-cta-panel h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(30px, 4vw, 46px);
+  line-height: 1.04;
+  letter-spacing: 0;
+}
+
+.landing-section-copy p,
+.landing-cta-panel p {
+  max-width: 640px;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.58;
+}
+
+.landing-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.landing-feature-card {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 20px;
+  box-shadow: var(--shadow-soft);
+  transition:
+    transform 0.22s var(--ease),
+    border-color 0.22s var(--ease),
+    box-shadow 0.22s var(--ease),
+    background 0.22s var(--ease);
+}
+
+.landing-feature-card:hover {
+  border-color: var(--line-strong);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  transform: translateY(-3px);
+}
+
+.landing-feature-icon {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+  border: 1px solid rgba(36, 88, 211, 0.16);
+  border-radius: var(--radius-control);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.landing-feature-card h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1.22;
+}
+
+.landing-feature-card p {
+  margin: 9px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.landing-cta-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+  margin: 28px 0 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(247, 250, 253, 0.88)),
+    linear-gradient(135deg, rgba(36, 88, 211, 0.08), rgba(15, 138, 95, 0.08));
+  padding: clamp(22px, 4vw, 34px);
+  box-shadow: var(--shadow);
+}
+
+.landing-cta-panel svg {
+  color: var(--success);
+  margin-bottom: 12px;
 }
 
 .form-card-header {
@@ -1702,6 +1876,13 @@ select:focus-visible,
   }
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .landing-feature-card {
+    animation: rowReveal 0.52s var(--ease) both;
+    animation-delay: calc(var(--feature-index) * 70ms);
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #10151f;
@@ -1801,6 +1982,27 @@ select:focus-visible,
     color: #6f7d91;
   }
 
+  .ui-button-secondary {
+    background: rgba(21, 28, 40, 0.78);
+    color: var(--text);
+  }
+
+  .ui-button-secondary:hover {
+    background: var(--surface-muted);
+    color: var(--accent-strong);
+  }
+
+  .landing-feature-card,
+  .landing-cta-panel {
+    background:
+      linear-gradient(135deg, rgba(21, 28, 40, 0.95), rgba(27, 36, 49, 0.88)),
+      linear-gradient(135deg, rgba(111, 149, 255, 0.1), rgba(99, 211, 159, 0.08));
+  }
+
+  .landing-feature-icon {
+    border-color: rgba(168, 189, 255, 0.2);
+  }
+
   .empty-state {
     border-color: rgba(76, 93, 117, 0.78);
     background:
@@ -1844,15 +2046,9 @@ select:focus-visible,
 }
 
 @media (max-width: 1040px) {
-  .landing-hero,
   .dashboard-hero {
     grid-template-columns: 1fr;
     align-items: start;
-  }
-
-  .landing-hero {
-    min-height: auto;
-    padding-top: 18px;
   }
 
   .dashboard-hero-panel {
@@ -1861,6 +2057,29 @@ select:focus-visible,
 
   .summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .landing-feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .landing-cta-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1180px) {
+  .auth-panel .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .landing-hero {
+    grid-template-columns: 1fr;
+    align-items: start;
+    min-height: auto;
+    padding-top: 18px;
   }
 }
 
@@ -1900,6 +2119,38 @@ select:focus-visible,
   .landing-hero,
   .dashboard-hero {
     gap: 18px;
+  }
+
+  .landing-hero {
+    padding: 18px 0 36px;
+  }
+
+  .landing-hero-actions {
+    align-items: stretch;
+    flex-direction: column;
+    margin-top: 22px;
+  }
+
+  .landing-hero-actions .ui-button,
+  .landing-cta-panel .ui-button {
+    width: 100%;
+  }
+
+  .landing-feature-section {
+    padding-top: 24px;
+  }
+
+  .landing-feature-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-feature-card,
+  .landing-cta-panel {
+    padding: 18px;
+  }
+
+  .landing-cta-panel {
+    margin-top: 18px;
   }
 
   .dashboard-hero,

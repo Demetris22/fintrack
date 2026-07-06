@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createUser } from "../services/api";
+import { Button, FormCard, FormField, TextInput } from "./ui";
 
 function CreateUserForm({ onUserCreated, onNotify }) {
   const [email, setEmail] = useState("");
@@ -43,56 +44,50 @@ function CreateUserForm({ onUserCreated, onNotify }) {
   }
 
   return (
-    <div className="card form-card">
-      <div className="form-card-header">
-        <h2>Create Account</h2>
-        <p>Register a user profile, then sign in to access your dashboard.</p>
-      </div>
-
+    <FormCard
+      title="Create Account"
+      description="Register a user profile, then sign in to access your dashboard."
+    >
       <form onSubmit={handleSubmit} className="form-grid">
-        <div className="form-field">
-          <label>Email</label>
-          <input
+        <FormField label="Email">
+          <TextInput
             type="email"
             placeholder="Example: demetris@email.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-        </div>
+        </FormField>
 
-        <div className="form-field">
-          <label>Password</label>
-          <input
+        <FormField label="Password">
+          <TextInput
             type="password"
             placeholder="Enter a password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-        </div>
+        </FormField>
 
-        <div className="form-field full-width">
-          <label>Full name</label>
-          <input
+        <FormField label="Full name" fullWidth>
+          <TextInput
             type="text"
             placeholder="Example: Demetris Demetriou"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
           />
-        </div>
+        </FormField>
 
         <div className="form-actions full-width">
-          <button type="submit" disabled={isSubmitting}>
-            {isSubmitting && <span className="button-spinner" aria-hidden="true"></span>}
+          <Button type="submit" isLoading={isSubmitting}>
             {isSubmitting ? "Creating..." : "Create User"}
-          </button>
+          </Button>
         </div>
       </form>
 
       {message && <p className="success">{message}</p>}
       {error && <p className="error">{error}</p>}
-    </div>
+    </FormCard>
   );
 }
 

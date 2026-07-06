@@ -14,10 +14,7 @@ import {
   X,
 } from "lucide-react";
 import "./App.css";
-import heroImage from "./assets/hero.png";
 
-import CreateUserForm from "./components/CreateUserForm";
-import SignInForm from "./components/SignInForm";
 import CreateWalletForm from "./components/CreateWalletForm";
 import DepositWalletForm from "./components/DepositWalletForm";
 import TransferWalletForm from "./components/TransferWalletForm";
@@ -29,6 +26,15 @@ import CreateBudgetForm from "./components/CreateBudgetForm";
 import SummaryCards from "./components/SummaryCards";
 import EmptyState from "./components/EmptyState";
 import DotGrid from "./components/DotGrid";
+import DashboardNav from "./components/DashboardNav";
+import LandingPage from "./components/LandingPage";
+import {
+  Button,
+  Card,
+  SectionHeader,
+  SelectInput,
+  TextInput,
+} from "./components/ui";
 
 import {
   getWallets,
@@ -64,25 +70,9 @@ const heroItem = {
   },
 };
 
-const previewWallets = [
-  { id: "preview-eur", currency: "EUR", balance: 8420 },
-  { id: "preview-usd", currency: "USD", balance: 3180 },
-];
-
-const previewTransactions = [
-  { id: "preview-tax", amount: 212.4, category: "Bills" },
-  { id: "preview-shop", amount: 76.2, category: "Shopping" },
-  { id: "preview-health", amount: 48.75, category: "Health" },
-];
-
-const previewBudgets = [
-  { id: "preview-budget-bills", category: "Bills", monthlyLimit: 620 },
-  { id: "preview-budget-food", category: "Food", monthlyLimit: 420 },
-];
-
 function AnalyticsFallback() {
   return (
-    <div className="card analytics-card analytics-fallback" role="status">
+    <Card className="analytics-card analytics-fallback" role="status">
       <div className="analytics-header">
         <p>Loading analytics workspace</p>
       </div>
@@ -93,7 +83,7 @@ function AnalyticsFallback() {
         <span className="skeleton skeleton-line"></span>
         <span className="skeleton skeleton-line"></span>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -290,29 +280,31 @@ function App() {
       sectionIds.push("transactions", "budgets");
     }
 
+    const sections = sectionIds
+      .map((sectionId) => document.getElementById(sectionId))
+      .filter(Boolean);
     let animationFrameId = 0;
 
-    function updateActiveSection() {
+    if (sections.length === 0) {
+      return undefined;
+    }
+
+    const updateActiveSection = () => {
       animationFrameId = 0;
 
-      const sections = sectionIds
-        .map((sectionId) => document.getElementById(sectionId))
-        .filter(Boolean);
-
-      if (sections.length === 0) {
-        return;
-      }
-
-      const readingLine = Math.min(180, window.innerHeight * 0.24);
+      const readingLine = Math.min(156, window.innerHeight * 0.24);
       let nextActiveSection = sections[0].id;
 
       for (const section of sections) {
-        const sectionTop = section.getBoundingClientRect().top;
+        const { top, bottom } = section.getBoundingClientRect();
 
-        if (sectionTop <= readingLine) {
+        if (top <= readingLine && bottom > readingLine) {
           nextActiveSection = section.id;
-        } else {
           break;
+        }
+
+        if (top <= readingLine) {
+          nextActiveSection = section.id;
         }
       }
 
@@ -327,29 +319,35 @@ function App() {
       setActiveSection((currentSection) =>
         currentSection === nextActiveSection ? currentSection : nextActiveSection
       );
-    }
+    };
 
-    function scheduleActiveSectionUpdate() {
+    const scheduleActiveSectionUpdate = () => {
       if (animationFrameId) {
         return;
       }
 
       animationFrameId = window.requestAnimationFrame(updateActiveSection);
-    }
+    };
 
     scheduleActiveSectionUpdate();
 
-    window.addEventListener("scroll", scheduleActiveSectionUpdate, {
+    const observer = new IntersectionObserver(scheduleActiveSectionUpdate, {
+      rootMargin: "-18% 0px -52% 0px",
+      threshold: [0, 0.1, 0.25, 0.5, 0.75, 1],
+    });
+
+    sections.forEach((section) => observer.observe(section));
+
+    window.addEventListener("resize", scheduleActiveSectionUpdate, {
       passive: true,
     });
-    window.addEventListener("resize", scheduleActiveSectionUpdate);
 
     return () => {
       if (animationFrameId) {
         window.cancelAnimationFrame(animationFrameId);
       }
 
-      window.removeEventListener("scroll", scheduleActiveSectionUpdate);
+      observer.disconnect();
       window.removeEventListener("resize", scheduleActiveSectionUpdate);
     };
   }, [
@@ -702,92 +700,26 @@ function App() {
       </header>
 
       {!currentUser && (
-        <motion.section
-          id="user"
-          className="landing-hero"
-          initial={shouldReduceMotion ? false : "hidden"}
-          animate="show"
-          variants={heroContainer}
-        >
-          <div className="hero-copy">
-            <motion.div className="hero-badge" variants={heroItem}>
-              Smart finance workspace
-            </motion.div>
-
-            <motion.h1 variants={heroItem}>
-              Track money clearly.
-            </motion.h1>
-
-            <motion.p variants={heroItem}>
-              Create wallets, move funds, and spot spending.
-            </motion.p>
-
-            <motion.div className="hero-preview-summary" variants={heroItem}>
-              <SummaryCards
-                wallets={previewWallets}
-                transactions={previewTransactions}
-                budgets={previewBudgets}
-              />
-            </motion.div>
-          </div>
-
-          <motion.div className="auth-panel" variants={heroItem}>
-            <div className="auth-panel-header">
-              <img src={heroImage} alt="" aria-hidden="true" />
-
-              <div>
-                <span>Start here</span>
-                <h2>
-                  {authMode === "register"
-                    ? "Create your workspace"
-                    : "Open your dashboard"}
-                </h2>
-              </div>
-            </div>
-
-            <div className="auth-toggle">
-              <button
-                type="button"
-                className={authMode === "register" ? "active" : ""}
-                onClick={() => setAuthMode("register")}
-              >
-                Register
-              </button>
-
-              <button
-                type="button"
-                className={authMode === "signin" ? "active" : ""}
-                onClick={() => setAuthMode("signin")}
-              >
-                Sign In
-              </button>
-            </div>
-
-            {authMode === "register" ? (
-              <CreateUserForm
-                onUserCreated={() => {
-                  setAuthMode("signin");
-                  showToast({
-                    type: "success",
-                    message: "Account created successfully. Please sign in.",
-                  });
-                }}
-                onNotify={showToast}
-              />
-            ) : (
-              <SignInForm
-                onUserSignedIn={(user) => {
-                  setCurrentUser(user);
-                  showToast({
-                    type: "success",
-                    message: "Signed in successfully.",
-                  });
-                }}
-                onNotify={showToast}
-              />
-            )}
-          </motion.div>
-        </motion.section>
+        <LandingPage
+          authMode={authMode}
+          onAuthModeChange={setAuthMode}
+          onNotify={showToast}
+          shouldReduceMotion={shouldReduceMotion}
+          onUserCreated={() => {
+            setAuthMode("signin");
+            showToast({
+              type: "success",
+              message: "Account created successfully. Please sign in.",
+            });
+          }}
+          onUserSignedIn={(user) => {
+            setCurrentUser(user);
+            showToast({
+              type: "success",
+              message: "Signed in successfully.",
+            });
+          }}
+        />
       )}
 
       {currentUser && (
@@ -821,91 +753,16 @@ function App() {
       )}
 
       {currentUser && (
-        <nav className="top-nav" aria-label="Dashboard sections">
-          <a
-            href="#user"
-            className={activeSection === "user" ? "active" : ""}
-            aria-current={activeSection === "user" ? "location" : undefined}
-            onClick={(event) => handleSectionNavClick(event, "user")}
-          >
-            User
-          </a>
-
-          <a
-            href="#wallets"
-            className={activeSection === "wallets" ? "active" : ""}
-            aria-current={activeSection === "wallets" ? "location" : undefined}
-            onClick={(event) => handleSectionNavClick(event, "wallets")}
-          >
-            Wallets
-          </a>
-
-          <a
-            href="#wallet-activity"
-            className={activeSection === "wallet-activity" ? "active" : ""}
-            aria-current={
-              activeSection === "wallet-activity" ? "location" : undefined
-            }
-            onClick={(event) =>
-              handleSectionNavClick(event, "wallet-activity")
-            }
-          >
-            Activity
-          </a>
-
-          <a
-            href="#analytics"
-            className={activeSection === "analytics" ? "active" : ""}
-            aria-current={
-              activeSection === "analytics" ? "location" : undefined
-            }
-            onClick={(event) => handleSectionNavClick(event, "analytics")}
-          >
-            Analytics
-          </a>
-
-          <a
-            href="#accounts"
-            className={activeSection === "accounts" ? "active" : ""}
-            aria-current={activeSection === "accounts" ? "location" : undefined}
-            onClick={(event) => handleSectionNavClick(event, "accounts")}
-          >
-            Accounts
-          </a>
-
-          {accounts.length > 0 && (
-            <>
-              <a
-                href="#transactions"
-                className={activeSection === "transactions" ? "active" : ""}
-                aria-current={
-                  activeSection === "transactions" ? "location" : undefined
-                }
-                onClick={(event) =>
-                  handleSectionNavClick(event, "transactions")
-                }
-              >
-                Transactions
-              </a>
-
-              <a
-                href="#budgets"
-                className={activeSection === "budgets" ? "active" : ""}
-                aria-current={
-                  activeSection === "budgets" ? "location" : undefined
-                }
-                onClick={(event) => handleSectionNavClick(event, "budgets")}
-              >
-                Budgets
-              </a>
-            </>
-          )}
-        </nav>
+        <DashboardNav
+          accountsLength={accounts.length}
+          activeSection={activeSection}
+          onNavigate={handleSectionNavClick}
+        />
       )}
 
       {currentUser && (
         <section id="user">
-          <div className="card profile-card">
+          <Card className="profile-card">
             <div className="profile-main">
               <div className="profile-avatar">{getUserInitials()}</div>
 
@@ -915,14 +772,14 @@ function App() {
                 <p>{currentUser.email}</p>
               </div>
 
-              <button
+              <Button
                 type="button"
                 className="sign-out-button"
                 onClick={handleClearCurrentUser}
               >
                 <LogOut size={16} strokeWidth={1.9} aria-hidden="true" />
                 Sign Out
-              </button>
+              </Button>
             </div>
 
             <div className="profile-stats">
@@ -941,7 +798,7 @@ function App() {
                 <p>Budgets</p>
               </div>
             </div>
-          </div>
+          </Card>
         </section>
       )}
 
@@ -993,90 +850,106 @@ function App() {
       {currentUser && (
         <>
           <section id="wallets">
-            <div className="section-header wallet-section-header">
-              <div className="section-title-block">
-                <h2>Wallets</h2>
-                <p>Create currency wallets, deposit funds, and move money.</p>
-              </div>
-
-              <div className="section-actions">
-                <button
-                  type="button"
-                  className={showWalletForm ? "action-toggle active" : "action-toggle"}
-                  onClick={() => {
-                    setShowWalletForm(!showWalletForm);
-                    setShowDepositForm(false);
-                    setShowTransferForm(false);
-                  }}
-                >
-                  {showWalletForm ? (
-                    <>
-                      <X size={16} strokeWidth={1.9} aria-hidden="true" />
-                      Cancel
-                    </>
-                  ) : (
-                    <>
-                      <Plus size={16} strokeWidth={1.9} aria-hidden="true" />
-                      Add Wallet
-                    </>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  className={showDepositForm ? "action-toggle active" : "action-toggle"}
-                  disabled={wallets.length === 0}
-                  onClick={() => {
-                    if (wallets.length === 0) {
-                      return;
+            <SectionHeader
+              className="wallet-section-header"
+              title="Wallets"
+              description="Create currency wallets, deposit funds, and move money."
+              actions={
+                <>
+                  <Button
+                    type="button"
+                    className={
+                      showWalletForm ? "action-toggle active" : "action-toggle"
                     }
+                    onClick={() => {
+                      setShowWalletForm(!showWalletForm);
+                      setShowDepositForm(false);
+                      setShowTransferForm(false);
+                    }}
+                  >
+                    {showWalletForm ? (
+                      <>
+                        <X size={16} strokeWidth={1.9} aria-hidden="true" />
+                        Cancel
+                      </>
+                    ) : (
+                      <>
+                        <Plus size={16} strokeWidth={1.9} aria-hidden="true" />
+                        Add Wallet
+                      </>
+                    )}
+                  </Button>
 
-                    setShowDepositForm(!showDepositForm);
-                    setShowWalletForm(false);
-                    setShowTransferForm(false);
-                  }}
-                >
-                  {showDepositForm ? (
-                    <>
-                      <X size={16} strokeWidth={1.9} aria-hidden="true" />
-                      Cancel
-                    </>
-                  ) : (
-                    <>
-                      <ArrowDown size={16} strokeWidth={1.9} aria-hidden="true" />
-                      Deposit
-                    </>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  className={showTransferForm ? "action-toggle active" : "action-toggle"}
-                  disabled={wallets.length === 0}
-                  onClick={() => {
-                    if (wallets.length === 0) {
-                      return;
+                  <Button
+                    type="button"
+                    className={
+                      showDepositForm ? "action-toggle active" : "action-toggle"
                     }
+                    disabled={wallets.length === 0}
+                    onClick={() => {
+                      if (wallets.length === 0) {
+                        return;
+                      }
 
-                    setShowTransferForm(!showTransferForm);
-                    setShowWalletForm(false);
-                    setShowDepositForm(false);
-                  }}
-                >
-                  {showTransferForm ? (
-                    <>
-                      <X size={16} strokeWidth={1.9} aria-hidden="true" />
-                      Cancel
-                    </>
-                  ) : (
-                    <>
-                      <Repeat2 size={16} strokeWidth={1.9} aria-hidden="true" />
-                      Transfer
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
+                      setShowDepositForm(!showDepositForm);
+                      setShowWalletForm(false);
+                      setShowTransferForm(false);
+                    }}
+                  >
+                    {showDepositForm ? (
+                      <>
+                        <X size={16} strokeWidth={1.9} aria-hidden="true" />
+                        Cancel
+                      </>
+                    ) : (
+                      <>
+                        <ArrowDown
+                          size={16}
+                          strokeWidth={1.9}
+                          aria-hidden="true"
+                        />
+                        Deposit
+                      </>
+                    )}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    className={
+                      showTransferForm
+                        ? "action-toggle active"
+                        : "action-toggle"
+                    }
+                    disabled={wallets.length === 0}
+                    onClick={() => {
+                      if (wallets.length === 0) {
+                        return;
+                      }
+
+                      setShowTransferForm(!showTransferForm);
+                      setShowWalletForm(false);
+                      setShowDepositForm(false);
+                    }}
+                  >
+                    {showTransferForm ? (
+                      <>
+                        <X size={16} strokeWidth={1.9} aria-hidden="true" />
+                        Cancel
+                      </>
+                    ) : (
+                      <>
+                        <Repeat2
+                          size={16}
+                          strokeWidth={1.9}
+                          aria-hidden="true"
+                        />
+                        Transfer
+                      </>
+                    )}
+                  </Button>
+                </>
+              }
+            />
 
             {showWalletForm && (
               <CreateWalletForm
@@ -1101,7 +974,7 @@ function App() {
               />
             )}
 
-            <div className="card dashboard-card wallet-dashboard-card">
+            <Card className="dashboard-card wallet-dashboard-card">
               {isLoadingData ? (
                 <div className="wallet-grid wallet-skeleton-grid" aria-hidden="true">
                   {[1, 2].map((item) => (
@@ -1188,16 +1061,14 @@ function App() {
                   })}
                 </div>
               )}
-            </div>
+            </Card>
           </section>
 
           <section id="wallet-activity">
-            <div className="section-header">
-              <div className="section-title-block">
-                <h2>Wallet Activity</h2>
-                <p>View deposits and transfers recorded for each wallet.</p>
-              </div>
-            </div>
+            <SectionHeader
+              title="Wallet Activity"
+              description="View deposits and transfers recorded for each wallet."
+            />
 
             <WalletActivityPanel
               wallets={wallets}
@@ -1207,12 +1078,10 @@ function App() {
           </section>
 
           <section id="analytics">
-            <div className="section-header">
-              <div className="section-title-block">
-                <h2>Analytics</h2>
-                <p>Visual insights based on your transaction categories.</p>
-              </div>
-            </div>
+            <SectionHeader
+              title="Analytics"
+              description="Visual insights based on your transaction categories."
+            />
 
             <Suspense fallback={<AnalyticsFallback />}>
               <AnalyticsPanel
@@ -1223,29 +1092,28 @@ function App() {
           </section>
 
           <section id="accounts" className="legacy-section">
-            <div className="section-header">
-              <div className="section-title-block">
-                <h2>Accounts</h2>
-                <p>Legacy account tools kept below the wallet workspace.</p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShowAccountForm(!showAccountForm)}
-              >
-                {showAccountForm ? (
-                  <>
-                    <X size={16} strokeWidth={1.9} aria-hidden="true" />
-                    Cancel
-                  </>
-                ) : (
-                  <>
-                    <Plus size={16} strokeWidth={1.9} aria-hidden="true" />
-                    Add Account
-                  </>
-                )}
-              </button>
-            </div>
+            <SectionHeader
+              title="Accounts"
+              description="Legacy account tools kept below the wallet workspace."
+              actions={
+                <Button
+                  type="button"
+                  onClick={() => setShowAccountForm(!showAccountForm)}
+                >
+                  {showAccountForm ? (
+                    <>
+                      <X size={16} strokeWidth={1.9} aria-hidden="true" />
+                      Cancel
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={16} strokeWidth={1.9} aria-hidden="true" />
+                      Add Account
+                    </>
+                  )}
+                </Button>
+              }
+            />
 
             {showAccountForm && (
               <CreateAccountForm
@@ -1254,7 +1122,7 @@ function App() {
               />
             )}
 
-            <div className="card dashboard-card">
+            <Card className="dashboard-card">
               {accounts.length === 0 ? (
                 <EmptyState
                   icon={Landmark}
@@ -1287,37 +1155,36 @@ function App() {
                   ))}
                 </div>
               )}
-            </div>
+            </Card>
           </section>
 
           {accounts.length > 0 && (
             <>
               <section id="transactions" className="legacy-section">
-                <div className="section-header">
-                  <div className="section-title-block">
-                    <h2>Transactions</h2>
-                    <p>Track, search, filter and sort your spending activity.</p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShowTransactionForm(!showTransactionForm)
-                    }
-                  >
-                    {showTransactionForm ? (
-                      <>
-                        <X size={16} strokeWidth={1.9} aria-hidden="true" />
-                        Cancel
-                      </>
-                    ) : (
-                      <>
-                        <Plus size={16} strokeWidth={1.9} aria-hidden="true" />
-                        Add Transaction
-                      </>
-                    )}
-                  </button>
-                </div>
+                <SectionHeader
+                  title="Transactions"
+                  description="Track, search, filter and sort your spending activity."
+                  actions={
+                    <Button
+                      type="button"
+                      onClick={() =>
+                        setShowTransactionForm(!showTransactionForm)
+                      }
+                    >
+                      {showTransactionForm ? (
+                        <>
+                          <X size={16} strokeWidth={1.9} aria-hidden="true" />
+                          Cancel
+                        </>
+                      ) : (
+                        <>
+                          <Plus size={16} strokeWidth={1.9} aria-hidden="true" />
+                          Add Transaction
+                        </>
+                      )}
+                    </Button>
+                  }
+                />
 
                 {showTransactionForm && (
                   <CreateTransactionForm
@@ -1327,7 +1194,7 @@ function App() {
                   />
                 )}
 
-                <div className="card dashboard-card">
+                <Card className="dashboard-card">
                   {transactions.length === 0 ? (
                     <EmptyState
                       icon={ReceiptText}
@@ -1337,7 +1204,7 @@ function App() {
                   ) : (
                     <>
                       <div className="transaction-tools">
-                        <input
+                        <TextInput
                           type="text"
                           placeholder="Search transactions..."
                           value={transactionSearch}
@@ -1346,7 +1213,7 @@ function App() {
                           }
                         />
 
-                        <select
+                        <SelectInput
                           value={transactionCategoryFilter}
                           onChange={(e) =>
                             setTransactionCategoryFilter(e.target.value)
@@ -1357,9 +1224,9 @@ function App() {
                               {category}
                             </option>
                           ))}
-                        </select>
+                        </SelectInput>
 
-                        <select
+                        <SelectInput
                           value={transactionSort}
                           onChange={(e) => setTransactionSort(e.target.value)}
                         >
@@ -1367,7 +1234,7 @@ function App() {
                           <option value="oldest">Oldest first</option>
                           <option value="highest">Highest amount</option>
                           <option value="lowest">Lowest amount</option>
-                        </select>
+                        </SelectInput>
                       </div>
 
                       <div className="transaction-stats">
@@ -1441,33 +1308,32 @@ function App() {
                       )}
                     </>
                   )}
-                </div>
+                </Card>
               </section>
 
               <section id="budgets" className="legacy-section">
-                <div className="section-header">
-                  <div className="section-title-block">
-                    <h2>Budgets</h2>
-                    <p>Set monthly limits and monitor how much budget remains.</p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowBudgetForm(!showBudgetForm)}
-                  >
-                    {showBudgetForm ? (
-                      <>
-                        <X size={16} strokeWidth={1.9} aria-hidden="true" />
-                        Cancel
-                      </>
-                    ) : (
-                      <>
-                        <Plus size={16} strokeWidth={1.9} aria-hidden="true" />
-                        Add Budget
-                      </>
-                    )}
-                  </button>
-                </div>
+                <SectionHeader
+                  title="Budgets"
+                  description="Set monthly limits and monitor how much budget remains."
+                  actions={
+                    <Button
+                      type="button"
+                      onClick={() => setShowBudgetForm(!showBudgetForm)}
+                    >
+                      {showBudgetForm ? (
+                        <>
+                          <X size={16} strokeWidth={1.9} aria-hidden="true" />
+                          Cancel
+                        </>
+                      ) : (
+                        <>
+                          <Plus size={16} strokeWidth={1.9} aria-hidden="true" />
+                          Add Budget
+                        </>
+                      )}
+                    </Button>
+                  }
+                />
 
                 {showBudgetForm && (
                   <CreateBudgetForm
@@ -1476,7 +1342,7 @@ function App() {
                   />
                 )}
 
-                <div className="card dashboard-card">
+                <Card className="dashboard-card">
                   {budgets.length === 0 ? (
                     <EmptyState
                       icon={Target}
@@ -1608,7 +1474,7 @@ function App() {
                       })}
                     </div>
                   )}
-                </div>
+                </Card>
               </section>
             </>
           )}

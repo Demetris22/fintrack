@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createAccount } from "../services/api";
+import { Button, FormCard, FormField, SelectInput, TextInput } from "./ui";
 
 function CreateAccountForm({ userId, onAccountCreated }) {
   const [name, setName] = useState("");
@@ -37,37 +38,32 @@ function CreateAccountForm({ userId, onAccountCreated }) {
   }
 
   return (
-    <div className="card form-card">
-      <div className="form-card-header">
-        <h2>Create Account</h2>
-        <p>Add a wallet, bank account, savings account, or card.</p>
-      </div>
-
+    <FormCard
+      title="Create Account"
+      description="Add a wallet, bank account, savings account, or card."
+    >
       <form onSubmit={handleSubmit} className="form-grid">
-        <div className="form-field">
-          <label>Account name</label>
-          <input
+        <FormField label="Account name">
+          <TextInput
             type="text"
             placeholder="Example: Main Wallet"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
           />
-        </div>
+        </FormField>
 
-        <div className="form-field">
-          <label>Institution</label>
-          <input
+        <FormField label="Institution">
+          <TextInput
             type="text"
             placeholder="Example: Revolut, Hellenic Bank"
             value={institution}
             onChange={(e) => setInstitution(e.target.value)}
           />
-        </div>
+        </FormField>
 
-        <div className="form-field">
-          <label>Account type</label>
-          <select
+        <FormField label="Account type">
+          <SelectInput
             value={accountType}
             onChange={(e) => setAccountType(e.target.value)}
           >
@@ -75,27 +71,26 @@ function CreateAccountForm({ userId, onAccountCreated }) {
             <option value="Bank">Bank</option>
             <option value="Savings">Savings</option>
             <option value="Card">Card</option>
-          </select>
-        </div>
+          </SelectInput>
+        </FormField>
 
-        <div className="form-field">
-          <label>Currency</label>
-          <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
+        <FormField label="Currency">
+          <SelectInput value={currency} onChange={(e) => setCurrency(e.target.value)}>
             <option value="EUR">EUR</option>
             <option value="USD">USD</option>
             <option value="GBP">GBP</option>
-          </select>
-        </div>
+          </SelectInput>
+        </FormField>
 
         <div className="form-actions full-width">
-          <button type="submit" disabled={isSubmitting}>
+          <Button type="submit" isLoading={isSubmitting}>
             {isSubmitting ? "Creating..." : "Create Account"}
-          </button>
+          </Button>
         </div>
       </form>
 
       {error && <p className="error">{error}</p>}
-    </div>
+    </FormCard>
   );
 }
 

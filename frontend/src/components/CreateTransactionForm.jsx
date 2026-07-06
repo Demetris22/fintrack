@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createTransaction } from "../services/api";
 import { categoryOptions } from "../utils/categoryStyles";
+import { Button, FormCard, FormField, SelectInput, TextInput } from "./ui";
 
 function CreateTransactionForm({ userId, accounts, onTransactionCreated }) {
   const [accountId, setAccountId] = useState("");
@@ -54,16 +55,13 @@ function CreateTransactionForm({ userId, accounts, onTransactionCreated }) {
   }
 
   return (
-    <div className="card form-card">
-      <div className="form-card-header">
-        <h2>Create Transaction</h2>
-        <p>Add a new expense and assign it to a category.</p>
-      </div>
-
+    <FormCard
+      title="Create Transaction"
+      description="Add a new expense and assign it to a category."
+    >
       <form onSubmit={handleSubmit} className="form-grid">
-        <div className="form-field">
-          <label>Account</label>
-          <select
+        <FormField label="Account">
+          <SelectInput
             value={effectiveAccountId}
             onChange={(e) => setAccountId(e.target.value)}
             required
@@ -73,12 +71,11 @@ function CreateTransactionForm({ userId, accounts, onTransactionCreated }) {
                 {account.name} - {account.accountType}
               </option>
             ))}
-          </select>
-        </div>
+          </SelectInput>
+        </FormField>
 
-        <div className="form-field">
-          <label>Amount</label>
-          <input
+        <FormField label="Amount">
+          <TextInput
             type="number"
             step="0.01"
             placeholder="Example: 25.50"
@@ -86,21 +83,19 @@ function CreateTransactionForm({ userId, accounts, onTransactionCreated }) {
             onChange={(e) => setAmount(e.target.value)}
             required
           />
-        </div>
+        </FormField>
 
-        <div className="form-field">
-          <label>Merchant</label>
-          <input
+        <FormField label="Merchant">
+          <TextInput
             type="text"
             placeholder="Example: Starbucks, Lidl, Gym"
             value={merchant}
             onChange={(e) => setMerchant(e.target.value)}
           />
-        </div>
+        </FormField>
 
-        <div className="form-field">
-          <label>Category</label>
-          <select
+        <FormField label="Category">
+          <SelectInput
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             required
@@ -112,36 +107,34 @@ function CreateTransactionForm({ userId, accounts, onTransactionCreated }) {
                 {option}
               </option>
             ))}
-          </select>
-        </div>
+          </SelectInput>
+        </FormField>
 
-        <div className="form-field full-width">
-          <label>Description</label>
-          <input
+        <FormField label="Description" fullWidth>
+          <TextInput
             type="text"
             placeholder="Optional note about this transaction"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
-        </div>
+        </FormField>
 
-        <div className="form-field">
-          <label>Transaction date</label>
-          <input
+        <FormField label="Transaction date">
+          <TextInput
             type="date"
             value={transactionDate}
             onChange={(e) => setTransactionDate(e.target.value)}
             required
           />
-        </div>
+        </FormField>
 
         <div className="form-actions full-width">
-          <button type="submit">Create Transaction</button>
+          <Button type="submit">Create Transaction</Button>
         </div>
       </form>
 
       {error && <p className="error">{error}</p>}
-    </div>
+    </FormCard>
   );
 }
 

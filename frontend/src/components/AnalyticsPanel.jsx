@@ -13,6 +13,7 @@ import {
 import { getSpendingByCategory } from "../services/api";
 import { getCategoryStyle } from "../utils/categoryStyles";
 import EmptyState from "./EmptyState";
+import { Button, Card } from "./ui";
 
 function AnalyticsPanel({ userId, transactions }) {
   const [breakdown, setBreakdown] = useState([]);
@@ -63,15 +64,14 @@ function AnalyticsPanel({ userId, transactions }) {
   );
 
   return (
-    <div className="card analytics-card">
+    <Card className="analytics-card">
       <div className="analytics-header">
         <p>Automatically updated from your transactions</p>
 
-        <button type="button" onClick={loadAnalytics} disabled={isLoading}>
-          {isLoading && <span className="button-spinner" aria-hidden="true"></span>}
+        <Button type="button" onClick={loadAnalytics} isLoading={isLoading}>
           {!isLoading && <RefreshCw size={16} strokeWidth={1.9} aria-hidden="true" />}
           {isLoading ? "Loading..." : "Refresh"}
-        </button>
+        </Button>
       </div>
 
       {error && <p className="error">{error}</p>}
@@ -155,7 +155,7 @@ function AnalyticsPanel({ userId, transactions }) {
           </div>
         </>
       )}
-    </div>
+    </Card>
   );
 }
 

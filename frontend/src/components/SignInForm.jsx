@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { loginUser } from "../services/api";
+import { Button, FormCard, FormField, TextInput } from "./ui";
 
 function SignInForm({ onUserSignedIn, onNotify }) {
   const [email, setEmail] = useState("");
@@ -40,45 +41,40 @@ function SignInForm({ onUserSignedIn, onNotify }) {
   }
 
   return (
-    <div className="card form-card">
-      <div className="form-card-header">
-        <h2>Sign In</h2>
-        <p>Enter your email and password to load your FinTrack dashboard.</p>
-      </div>
-
+    <FormCard
+      title="Sign In"
+      description="Enter your email and password to load your FinTrack dashboard."
+    >
       <form onSubmit={handleSubmit} className="form-grid">
-        <div className="form-field full-width">
-          <label>Email</label>
-          <input
+        <FormField label="Email" fullWidth>
+          <TextInput
             type="email"
             placeholder="Example: demetris@email.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-        </div>
+        </FormField>
 
-        <div className="form-field full-width">
-          <label>Password</label>
-          <input
+        <FormField label="Password" fullWidth>
+          <TextInput
             type="password"
             placeholder="Enter your password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-        </div>
+        </FormField>
 
         <div className="form-actions full-width">
-          <button type="submit" disabled={isSubmitting}>
-            {isSubmitting && <span className="button-spinner" aria-hidden="true"></span>}
+          <Button type="submit" isLoading={isSubmitting}>
             {isSubmitting ? "Signing in..." : "Sign In"}
-          </button>
+          </Button>
         </div>
       </form>
 
       {error && <p className="error">{error}</p>}
-    </div>
+    </FormCard>
   );
 }
 

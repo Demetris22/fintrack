@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { getWalletTransactions } from "../services/api";
 import EmptyState from "./EmptyState";
+import { Button, Card, FormField, SelectInput } from "./ui";
 
 function WalletActivityPanel({ wallets, refreshKey = 0, onNotify }) {
   const [selectedWalletId, setSelectedWalletId] = useState("");
@@ -120,7 +121,7 @@ function WalletActivityPanel({ wallets, refreshKey = 0, onNotify }) {
   }
 
   return (
-    <div className="card dashboard-card wallet-activity-card">
+    <Card className="dashboard-card wallet-activity-card">
       {wallets.length === 0 ? (
         <EmptyState
           icon={Wallet}
@@ -130,10 +131,8 @@ function WalletActivityPanel({ wallets, refreshKey = 0, onNotify }) {
       ) : (
         <>
           <div className="wallet-activity-toolbar">
-            <div className="form-field wallet-activity-select">
-              <label>Select wallet</label>
-
-              <select
+            <FormField label="Select wallet" className="wallet-activity-select">
+              <SelectInput
                 value={activeWalletId}
                 onChange={(e) => setSelectedWalletId(e.target.value)}
               >
@@ -142,18 +141,18 @@ function WalletActivityPanel({ wallets, refreshKey = 0, onNotify }) {
                     {wallet.currency} Wallet
                   </option>
                 ))}
-              </select>
-            </div>
+              </SelectInput>
+            </FormField>
 
-            <button
+            <Button
               type="button"
               onClick={() => loadWalletTransactions()}
               disabled={!activeWalletId || isLoading}
+              isLoading={isLoading}
             >
-              {isLoading && <span className="button-spinner" aria-hidden="true"></span>}
               {!isLoading && <RefreshCw size={16} strokeWidth={1.9} aria-hidden="true" />}
               {isLoading ? "Loading..." : "Refresh"}
-            </button>
+            </Button>
           </div>
 
           {error && <p className="error">{error}</p>}
@@ -221,7 +220,7 @@ function WalletActivityPanel({ wallets, refreshKey = 0, onNotify }) {
           )}
         </>
       )}
-    </div>
+    </Card>
   );
 }
 

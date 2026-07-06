@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createWallet } from "../services/api";
+import { Button, FormCard, FormField, SelectInput } from "./ui";
 
 function CreateWalletForm({ onWalletCreated, onNotify }) {
   const [currency, setCurrency] = useState("EUR");
@@ -29,33 +30,25 @@ function CreateWalletForm({ onWalletCreated, onNotify }) {
   }
 
   return (
-    <div className="card form-card">
-      <div className="form-card-header">
-        <h2>Create Wallet</h2>
-        <p>Create a wallet for a specific currency.</p>
-      </div>
-
+    <FormCard title="Create Wallet" description="Create a wallet for a specific currency.">
       <form onSubmit={handleSubmit} className="form-grid">
-        <div className="form-field full-width">
-          <label>Currency</label>
-
-          <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
+        <FormField label="Currency" fullWidth>
+          <SelectInput value={currency} onChange={(e) => setCurrency(e.target.value)}>
             <option value="EUR">EUR</option>
             <option value="USD">USD</option>
             <option value="GBP">GBP</option>
-          </select>
-        </div>
+          </SelectInput>
+        </FormField>
 
         <div className="form-actions full-width">
-          <button type="submit" disabled={isSubmitting}>
-            {isSubmitting && <span className="button-spinner" aria-hidden="true"></span>}
+          <Button type="submit" isLoading={isSubmitting}>
             {isSubmitting ? "Creating..." : "Create Wallet"}
-          </button>
+          </Button>
         </div>
       </form>
 
       {error && <p className="error">{error}</p>}
-    </div>
+    </FormCard>
   );
 }
 

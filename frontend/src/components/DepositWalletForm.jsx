@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { depositToWallet } from "../services/api";
+import { Button, FormCard, FormField, SelectInput, TextInput } from "./ui";
 
 function DepositWalletForm({ wallets, onDepositCompleted, onNotify }) {
   const [walletId, setWalletId] = useState("");
@@ -65,12 +66,10 @@ function DepositWalletForm({ wallets, onDepositCompleted, onNotify }) {
   }
 
   return (
-    <div className="card form-card">
-      <div className="form-card-header">
-        <h2>Deposit to Wallet</h2>
-        <p>Add funds to one of your existing wallets.</p>
-      </div>
-
+    <FormCard
+      title="Deposit to Wallet"
+      description="Add funds to one of your existing wallets."
+    >
       {selectedWallet && (
         <div className="form-balance-panel">
           <div>
@@ -88,10 +87,8 @@ function DepositWalletForm({ wallets, onDepositCompleted, onNotify }) {
       )}
 
       <form onSubmit={handleSubmit} className="form-grid">
-        <div className="form-field">
-          <label>Wallet</label>
-
-          <select
+        <FormField label="Wallet">
+          <SelectInput
             value={effectiveWalletId}
             onChange={(e) => setWalletId(e.target.value)}
             required
@@ -108,13 +105,11 @@ function DepositWalletForm({ wallets, onDepositCompleted, onNotify }) {
                 )}
               </option>
             ))}
-          </select>
-        </div>
+          </SelectInput>
+        </FormField>
 
-        <div className="form-field">
-          <label>Amount</label>
-
-          <input
+        <FormField label="Amount">
+          <TextInput
             type="number"
             step="0.01"
             placeholder="Example: 100"
@@ -128,7 +123,7 @@ function DepositWalletForm({ wallets, onDepositCompleted, onNotify }) {
               Amount must be greater than 0.
             </small>
           )}
-        </div>
+        </FormField>
 
         {selectedWallet && amountNumber > 0 && (
           <div className="deposit-preview-card full-width">
@@ -145,19 +140,19 @@ function DepositWalletForm({ wallets, onDepositCompleted, onNotify }) {
         )}
 
         <div className="form-actions full-width">
-          <button
+          <Button
             type="submit"
             className={canSubmit ? "submit-ready" : ""}
             disabled={isSubmitting || !canSubmit}
+            isLoading={isSubmitting}
           >
-            {isSubmitting && <span className="button-spinner" aria-hidden="true"></span>}
             {isSubmitting ? "Depositing..." : "Deposit"}
-          </button>
+          </Button>
         </div>
       </form>
 
       {error && <p className="error">{error}</p>}
-    </div>
+    </FormCard>
   );
 }
 
