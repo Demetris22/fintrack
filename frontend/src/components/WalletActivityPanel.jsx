@@ -35,7 +35,7 @@ function WalletActivityPanel({ wallets, refreshKey = 0, onNotify }) {
 
       try {
         const data = await getWalletTransactions(walletId);
-        setTransactions(data || []);
+        setTransactions(Array.isArray(data) ? data : []);
       } catch (err) {
         const message = err.message || "Could not load wallet activity.";
 
@@ -72,7 +72,13 @@ function WalletActivityPanel({ wallets, refreshKey = 0, onNotify }) {
       return "No date";
     }
 
-    return new Date(dateString).toLocaleString("en-GB", {
+    const date = new Date(dateString);
+
+    if (Number.isNaN(date.getTime())) {
+      return "No date";
+    }
+
+    return date.toLocaleString("en-GB", {
       day: "2-digit",
       month: "short",
       year: "numeric",
@@ -82,7 +88,10 @@ function WalletActivityPanel({ wallets, refreshKey = 0, onNotify }) {
   }
 
   function getWalletEffect(transaction) {
-    const posting = transaction.postings?.find(
+    const postings = Array.isArray(transaction.postings)
+      ? transaction.postings
+      : [];
+    const posting = postings.find(
       (item) => item.walletId === activeWalletId
     );
 

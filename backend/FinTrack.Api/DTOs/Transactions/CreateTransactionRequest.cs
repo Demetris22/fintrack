@@ -6,9 +6,19 @@ public class CreateTransactionRequest
 {
     public Guid UserId { get; set; }
     public Guid AccountId { get; set; }
+
+    [Required]
+    [StringLength(3, MinimumLength = 3, ErrorMessage = "Currency must be a 3-letter code.")]
     public string Currency { get; set; } = "EUR";
+
+    [MaxLength(120)]
     public string? Merchant { get; set; }
+
+    [Required]
+    [MaxLength(80)]
     public string? Category { get; set; }
+
+    [MaxLength(240)]
     public string? Description { get; set; }
 
     [Range(0.01, double.MaxValue, ErrorMessage = "Amount must be greater than zero.")]

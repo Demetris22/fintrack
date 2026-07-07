@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createAccount } from "../services/api";
 import { Button, FormCard, FormField, SelectInput, TextInput } from "./ui";
 
-function CreateAccountForm({ userId, onAccountCreated }) {
+function CreateAccountForm({ userId, onAccountCreated, onNotify }) {
   const [name, setName] = useState("");
   const [institution, setInstitution] = useState("");
   const [accountType, setAccountType] = useState("Wallet");
@@ -12,14 +12,28 @@ function CreateAccountForm({ userId, onAccountCreated }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    if (isSubmitting) {
+      return;
+    }
+
     setError("");
+
+    const trimmedName = name.trim();
+    const trimmedInstitution = institution.trim();
+
+    if (!trimmedName) {
+      setError("Please enter an account name.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       const account = await createAccount({
         userId,
-        name,
-        institution,
+        name: trimmedName,
+        institution: trimmedInstitution,
         accountType,
         currency,
       });
@@ -31,7 +45,10 @@ function CreateAccountForm({ userId, onAccountCreated }) {
       setAccountType("Wallet");
       setCurrency("EUR");
     } catch (err) {
-      setError(err.message);
+      const message = err.message || "Could not create account.";
+
+      setError(message);
+      onNotify?.({ type: "error", message });
     } finally {
       setIsSubmitting(false);
     }
@@ -83,7 +100,7 @@ function CreateAccountForm({ userId, onAccountCreated }) {
         </FormField>
 
         <div className="form-actions full-width">
-          <Button type="submit" isLoading={isSubmitting}>
+          <Button type="submit" isLoading={isSubmitting} disabled={!name.trim()}>
             {isSubmitting ? "Creating…" : "Create Account"}
           </Button>
         </div>

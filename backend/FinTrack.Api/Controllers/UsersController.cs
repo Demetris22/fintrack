@@ -26,6 +26,9 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateUserRequest request)
     {
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        var fullName = string.IsNullOrWhiteSpace(request.FullName)
+            ? null
+            : request.FullName.Trim();
 
         var emailTaken = await _db.Users.AnyAsync(u => u.Email.ToLower() == normalizedEmail);
         if (emailTaken)
@@ -35,7 +38,7 @@ public class UsersController : ControllerBase
         {
             Email = normalizedEmail,
             PasswordHash = HashPassword(request.Password),
-            FullName = request.FullName,
+            FullName = fullName,
         };
 
         _db.Users.Add(user);

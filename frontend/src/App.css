@@ -78,6 +78,13 @@ select {
   font: inherit;
 }
 
+input:disabled,
+select:disabled,
+input:read-only {
+  background: var(--surface-muted);
+  color: var(--muted);
+}
+
 button {
   min-height: 44px;
   display: inline-flex;
@@ -316,10 +323,38 @@ li {
 
 .landing-hero,
 .dashboard-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: grid;
   grid-template-columns: minmax(0, 1.08fr) minmax(380px, 0.92fr);
   align-items: center;
   gap: 42px;
+}
+
+.landing-hero > :not(.hero-aurora-layer),
+.dashboard-hero > :not(.hero-aurora-layer) {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-aurora-layer {
+  position: absolute;
+  inset: -36% -18% -18%;
+  z-index: 0;
+  opacity: 0.34;
+  pointer-events: none;
+  filter: blur(1.5px) saturate(1.08);
+  mix-blend-mode: multiply;
+}
+
+.landing-aurora {
+  opacity: 0.28;
+}
+
+.dashboard-aurora {
+  inset: -42% -18% -20%;
+  opacity: 0.32;
 }
 
 .landing-hero {
@@ -821,6 +856,22 @@ section {
   scroll-margin-top: 112px;
 }
 
+.section-entrance {
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section-entrance {
+    opacity: 1 !important;
+    transform: none !important;
+    visibility: visible !important;
+  }
+
+  .hero-aurora-layer {
+    display: none;
+  }
+}
+
 .dashboard-hero-panel {
   justify-self: end;
   width: min(320px, 100%);
@@ -1108,11 +1159,36 @@ section {
   font-size: 28px;
   line-height: 1.12;
   font-weight: 850;
+  font-variant-numeric: tabular-nums;
 }
 
 .summary-value.compact {
   font-size: 20px;
   overflow-wrap: anywhere;
+}
+
+.count-up-number {
+  font-variant-numeric: tabular-nums;
+}
+
+.currency-total-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px 8px;
+}
+
+.currency-total-item,
+.wallet-count-up {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
+  white-space: nowrap;
+}
+
+.currency-total-separator {
+  margin-right: 8px;
+  color: var(--subtle);
 }
 
 .summary-value.negative,
@@ -1188,6 +1264,7 @@ section {
     transform 0.22s var(--ease),
     box-shadow 0.22s var(--ease),
     border-color 0.22s var(--ease);
+  --spotlight-color: rgba(36, 88, 211, 0.12);
 }
 
 .wallet-card-header,
@@ -1286,7 +1363,22 @@ section {
   font-size: 30px;
   line-height: 1.1;
   font-weight: 850;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+}
+
+.wallet-balance-block .wallet-count-up {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: baseline;
+  color: var(--success);
+  font-size: clamp(24px, 2.3vw, 30px);
+  line-height: 1.1;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.wallet-balance-block .count-up-number {
+  display: inline-block;
 }
 
 .wallet-meta-grid {
@@ -1296,9 +1388,12 @@ section {
 
 .wallet-id-block {
   min-width: 0;
+  flex: 1 1 auto;
 }
 
 .wallet-id-block code {
+  display: block;
+  max-width: 100%;
   margin-top: 6px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1351,6 +1446,11 @@ section {
     transform 0.22s var(--ease),
     box-shadow 0.22s var(--ease),
     border-color 0.22s var(--ease);
+}
+
+.data-row > div,
+.budget-card > div {
+  min-width: 0;
 }
 
 .account-row,
@@ -1971,6 +2071,8 @@ section {
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
+.copy-button:focus-visible,
+.toast-close:focus-visible,
 .wallet-card:focus-visible,
 .brand-lockup:focus-visible {
   outline: 3px solid rgba(36, 88, 211, 0.28);
@@ -2139,6 +2241,16 @@ select:focus-visible,
     background:
       linear-gradient(135deg, rgba(21, 28, 40, 0.95), rgba(27, 36, 49, 0.88)),
       linear-gradient(135deg, rgba(111, 149, 255, 0.1), rgba(99, 211, 159, 0.08));
+  }
+
+  .hero-aurora-layer {
+    opacity: 0.24;
+    mix-blend-mode: screen;
+    filter: blur(2px) saturate(0.95);
+  }
+
+  .dashboard-aurora {
+    opacity: 0.28;
   }
 
   .auth-panel-header img {
@@ -2424,6 +2536,12 @@ select:focus-visible,
   .transfer-review-panel {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .wallet-id-block code,
+  .transfer-review-panel small {
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .amount,

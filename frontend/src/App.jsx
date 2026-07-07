@@ -28,6 +28,9 @@ import EmptyState from "./components/EmptyState";
 import DotGrid from "./components/DotGrid";
 import DashboardNav from "./components/DashboardNav";
 import LandingPage from "./components/LandingPage";
+import AnimatedCurrency from "./components/AnimatedCurrency";
+import SpotlightCard from "./components/SpotlightCard";
+import FadeContent from "./components/FadeContent";
 import {
   Button,
   Card,
@@ -46,6 +49,9 @@ import {
 import { getCategoryStyle } from "./utils/categoryStyles";
 
 const AnalyticsPanel = lazy(() => import("./components/AnalyticsPanel"));
+const Aurora = lazy(() => import("./components/Aurora"));
+
+const DASHBOARD_AURORA_COLORS = ["#2458d3", "#0f8a5f", "#b9c8ff"];
 
 const heroContainer = {
   hidden: { opacity: 1 },
@@ -216,16 +222,22 @@ function App() {
       localStorage.setItem("currentUser", JSON.stringify(currentUser));
       setIsLoadingData(true);
       setDataError("");
+      let hasShownSessionExpired = false;
 
       function handleLoadError(resourceName, err) {
-        console.error(`Failed to load ${resourceName}:`, err);
+        if (import.meta.env.DEV) {
+          console.warn(`Failed to load ${resourceName}:`, err);
+        }
 
         if (err.status === 401) {
           const message =
             "Your session expired. Please sign out and sign in again.";
 
           setDataError(message);
-          showToast({ type: "error", message });
+          if (!hasShownSessionExpired) {
+            showToast({ type: "error", message });
+            hasShownSessionExpired = true;
+          }
           return;
         }
 
@@ -237,28 +249,28 @@ function App() {
 
       try {
         const walletsData = await getWallets();
-        setWallets(walletsData);
+        setWallets(Array.isArray(walletsData) ? walletsData : []);
       } catch (err) {
         handleLoadError("wallets", err);
       }
 
       try {
         const accountsData = await getAccounts(currentUser.id);
-        setAccounts(accountsData);
+        setAccounts(Array.isArray(accountsData) ? accountsData : []);
       } catch (err) {
         handleLoadError("accounts", err);
       }
 
       try {
         const transactionsData = await getTransactions(currentUser.id);
-        setTransactions(transactionsData);
+        setTransactions(Array.isArray(transactionsData) ? transactionsData : []);
       } catch (err) {
         handleLoadError("transactions", err);
       }
 
       try {
         const budgetsData = await getBudgets(currentUser.id);
-        setBudgets(budgetsData);
+        setBudgets(Array.isArray(budgetsData) ? budgetsData : []);
       } catch (err) {
         handleLoadError("budgets", err);
       }
@@ -497,7 +509,9 @@ function App() {
         );
       }, 1800);
     } catch (err) {
-      console.error("Failed to copy wallet ID:", err);
+      if (import.meta.env.DEV) {
+        console.warn("Failed to copy wallet ID:", err);
+      }
       showToast({
         type: "error",
         message: "Could not copy wallet ID. You can select it manually.",
@@ -506,7 +520,9 @@ function App() {
   }
 
   function handleProtectedActionError(actionName, err) {
-    console.error(`Failed to ${actionName}:`, err);
+    if (import.meta.env.DEV) {
+      console.warn(`Failed to ${actionName}:`, err);
+    }
 
     if (err.status === 401) {
       const message = "Your session expired. Please sign out and sign in again.";
@@ -569,6 +585,7 @@ function App() {
   function handleAccountCreated(account) {
     setAccounts((currentAccounts) => [account, ...currentAccounts]);
     setShowAccountForm(false);
+    showToast({ type: "success", message: "Account created successfully." });
   }
 
   function handleTransactionCreated(transaction) {
@@ -577,11 +594,13 @@ function App() {
       ...currentTransactions,
     ]);
     setShowTransactionForm(false);
+    showToast({ type: "success", message: "Transaction created successfully." });
   }
 
   function handleBudgetCreated(budget) {
     setBudgets((currentBudgets) => [budget, ...currentBudgets]);
     setShowBudgetForm(false);
+    showToast({ type: "success", message: "Budget created successfully." });
   }
 
   function handleClearCurrentUser() {
@@ -740,6 +759,19 @@ function App() {
           animate="show"
           variants={heroContainer}
         >
+          {!shouldReduceMotion && (
+            <div className="hero-aurora-layer dashboard-aurora" aria-hidden="true">
+              <Suspense fallback={null}>
+                <Aurora
+                  colorStops={DASHBOARD_AURORA_COLORS}
+                  amplitude={0.34}
+                  blend={0.22}
+                  speed={0.22}
+                />
+              </Suspense>
+            </div>
+          )}
+
           <div className="hero-copy">
             <motion.div className="hero-badge" variants={heroItem}>
               Live finance dashboard
@@ -785,43 +817,45 @@ function App() {
 
       {currentUser && (
         <section id="user">
-          <Card className="profile-card">
-            <div className="profile-main">
-              <div className="profile-avatar">{getUserInitials()}</div>
+          <FadeContent delay={0.04}>
+            <Card className="profile-card">
+              <div className="profile-main">
+                <div className="profile-avatar">{getUserInitials()}</div>
 
-              <div className="profile-info">
-                <p className="welcome-label">Workspace Overview</p>
-                <h2>Session and Setup</h2>
-                <p>Signed in as {currentUser.email}</p>
+                <div className="profile-info">
+                  <p className="welcome-label">Workspace Overview</p>
+                  <h2>Session and Setup</h2>
+                  <p>Signed in as {currentUser.email}</p>
+                </div>
+
+                <Button
+                  type="button"
+                  className="sign-out-button"
+                  onClick={handleClearCurrentUser}
+                >
+                  <LogOut size={16} strokeWidth={1.9} aria-hidden="true" />
+                  Sign Out
+                </Button>
               </div>
 
-              <Button
-                type="button"
-                className="sign-out-button"
-                onClick={handleClearCurrentUser}
-              >
-                <LogOut size={16} strokeWidth={1.9} aria-hidden="true" />
-                Sign Out
-              </Button>
-            </div>
+              <div className="profile-stats">
+                <div>
+                  <span>{wallets.length}</span>
+                  <p>Wallets</p>
+                </div>
 
-            <div className="profile-stats">
-              <div>
-                <span>{wallets.length}</span>
-                <p>Wallets</p>
-              </div>
+                <div>
+                  <span>{walletCurrencyCount}</span>
+                  <p>Currencies</p>
+                </div>
 
-              <div>
-                <span>{walletCurrencyCount}</span>
-                <p>Currencies</p>
+                <div>
+                  <span>{budgets.length}</span>
+                  <p>Budgets</p>
+                </div>
               </div>
-
-              <div>
-                <span>{budgets.length}</span>
-                <p>Budgets</p>
-              </div>
-            </div>
-          </Card>
+            </Card>
+          </FadeContent>
         </section>
       )}
 
@@ -846,56 +880,329 @@ function App() {
               : "dashboard-summary"
           }
         >
-          <h2 className="section-title">Money Overview</h2>
+          <FadeContent delay={0.08}>
+            <h2 className="section-title">Money Overview</h2>
 
-          {isLoadingData ? (
-            <div className="summary-grid skeleton-grid" aria-hidden="true">
-              {[1, 2, 3, 4].map((item) => (
-                <div className="summary-card skeleton-card" key={item}>
-                  <span className="skeleton skeleton-icon"></span>
-                  <span className="skeleton skeleton-line short"></span>
-                  <span className="skeleton skeleton-value"></span>
-                  <span className="skeleton skeleton-line"></span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <SummaryCards
-              wallets={wallets}
-              transactions={transactions}
-              budgets={budgets}
-              isUpdating={isSummaryUpdating}
-            />
-          )}
+            {isLoadingData ? (
+              <div className="summary-grid skeleton-grid" aria-hidden="true">
+                {[1, 2, 3, 4].map((item) => (
+                  <div className="summary-card skeleton-card" key={item}>
+                    <span className="skeleton skeleton-icon"></span>
+                    <span className="skeleton skeleton-line short"></span>
+                    <span className="skeleton skeleton-value"></span>
+                    <span className="skeleton skeleton-line"></span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <SummaryCards
+                wallets={wallets}
+                transactions={transactions}
+                budgets={budgets}
+                isUpdating={isSummaryUpdating}
+              />
+            )}
+          </FadeContent>
         </section>
       )}
 
       {currentUser && (
         <>
           <section id="wallets">
-            <SectionHeader
-              className="wallet-section-header"
-              title="Wallets"
-              description="Create currency wallets, deposit funds, and move money."
-              actions={
-                <>
+            <FadeContent delay={0.1}>
+              <SectionHeader
+                className="wallet-section-header"
+                title="Wallets"
+                description="Create currency wallets, deposit funds, and move money."
+                actions={
+                  <>
+                    <Button
+                      type="button"
+                      variant={
+                        wallets.length === 0 || showWalletForm
+                          ? "primary"
+                          : "secondary"
+                      }
+                      className={
+                        showWalletForm ? "action-toggle active" : "action-toggle"
+                      }
+                      onClick={() => {
+                        setShowWalletForm(!showWalletForm);
+                        setShowDepositForm(false);
+                        setShowTransferForm(false);
+                      }}
+                    >
+                      {showWalletForm ? (
+                        <>
+                          <X size={16} strokeWidth={1.9} aria-hidden="true" />
+                          Cancel
+                        </>
+                      ) : (
+                        <>
+                          <Plus size={16} strokeWidth={1.9} aria-hidden="true" />
+                          Add Wallet
+                        </>
+                      )}
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant={showDepositForm ? "primary" : "secondary"}
+                      className={
+                        showDepositForm
+                          ? "action-toggle active"
+                          : "action-toggle"
+                      }
+                      disabled={wallets.length === 0}
+                      onClick={() => {
+                        if (wallets.length === 0) {
+                          return;
+                        }
+
+                        setShowDepositForm(!showDepositForm);
+                        setShowWalletForm(false);
+                        setShowTransferForm(false);
+                      }}
+                    >
+                      {showDepositForm ? (
+                        <>
+                          <X size={16} strokeWidth={1.9} aria-hidden="true" />
+                          Cancel
+                        </>
+                      ) : (
+                        <>
+                          <ArrowDown
+                            size={16}
+                            strokeWidth={1.9}
+                            aria-hidden="true"
+                          />
+                          Deposit
+                        </>
+                      )}
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant={showTransferForm ? "primary" : "secondary"}
+                      className={
+                        showTransferForm
+                          ? "action-toggle active"
+                          : "action-toggle"
+                      }
+                      disabled={wallets.length === 0}
+                      onClick={() => {
+                        if (wallets.length === 0) {
+                          return;
+                        }
+
+                        setShowTransferForm(!showTransferForm);
+                        setShowWalletForm(false);
+                        setShowDepositForm(false);
+                      }}
+                    >
+                      {showTransferForm ? (
+                        <>
+                          <X size={16} strokeWidth={1.9} aria-hidden="true" />
+                          Cancel
+                        </>
+                      ) : (
+                        <>
+                          <Repeat2
+                            size={16}
+                            strokeWidth={1.9}
+                            aria-hidden="true"
+                          />
+                          Transfer
+                        </>
+                      )}
+                    </Button>
+                  </>
+                }
+              />
+
+              {showWalletForm && (
+                <CreateWalletForm
+                  onWalletCreated={handleWalletCreated}
+                  onNotify={showToast}
+                />
+              )}
+
+              {showDepositForm && (
+                <DepositWalletForm
+                  wallets={wallets}
+                  onDepositCompleted={handleDepositCompleted}
+                  onNotify={showToast}
+                />
+              )}
+
+              {showTransferForm && (
+                <TransferWalletForm
+                  wallets={wallets}
+                  onTransferCompleted={handleTransferCompleted}
+                  onNotify={showToast}
+                />
+              )}
+
+              <Card className="dashboard-card wallet-dashboard-card">
+                {isLoadingData ? (
+                  <div
+                    className="wallet-grid wallet-skeleton-grid"
+                    aria-hidden="true"
+                  >
+                    {[1, 2].map((item) => (
+                      <div
+                        className="wallet-card wallet-skeleton-card"
+                        key={item}
+                      >
+                        <div className="wallet-card-header">
+                          <span className="skeleton skeleton-icon"></span>
+                          <span className="skeleton skeleton-pill"></span>
+                        </div>
+                        <span className="skeleton skeleton-value"></span>
+                        <span className="skeleton skeleton-line"></span>
+                        <span className="skeleton skeleton-line short"></span>
+                      </div>
+                    ))}
+                  </div>
+                ) : wallets.length === 0 ? (
+                  <EmptyState
+                    icon={Wallet}
+                    title="No wallets yet"
+                    description="Create your first wallet to unlock deposits, transfers, and activity history."
+                  >
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setShowWalletForm(true);
+                        setShowDepositForm(false);
+                        setShowTransferForm(false);
+                      }}
+                    >
+                      <Plus size={16} strokeWidth={1.9} aria-hidden="true" />
+                      Create First Wallet
+                    </Button>
+                  </EmptyState>
+                ) : (
+                  <div className="wallet-grid">
+                    {wallets.map((wallet) => {
+                      const statusText = getWalletStatusText(wallet.status);
+                      const statusClass =
+                        statusText.toLowerCase() === "active"
+                          ? "active"
+                          : "muted";
+
+                      return (
+                        <SpotlightCard
+                          as="article"
+                          className={
+                            recentlyUpdatedWalletIds.includes(wallet.id)
+                              ? "wallet-card balance-updated"
+                              : "wallet-card"
+                          }
+                          spotlightColor="rgba(36, 88, 211, 0.12)"
+                          key={wallet.id}
+                          tabIndex="0"
+                        >
+                          <div className="wallet-card-header">
+                            <div className="wallet-title-group">
+                              <div className="wallet-icon">
+                                {getWalletIcon(wallet.currency)}
+                              </div>
+
+                              <div>
+                                <h3>{wallet.currency} Wallet</h3>
+                                <p>Currency wallet</p>
+                              </div>
+                            </div>
+
+                            <span className={`wallet-status ${statusClass}`}>
+                              {statusText}
+                            </span>
+                          </div>
+
+                          <div className="wallet-balance-block">
+                            <span>Available balance</span>
+                            <strong>
+                              <AnimatedCurrency
+                                amount={getWalletBalance(wallet)}
+                                currency={wallet.currency}
+                                className="wallet-count-up"
+                              />
+                            </strong>
+                          </div>
+
+                          <div className="wallet-meta-grid">
+                            <div className="wallet-id-block">
+                              <span>Wallet ID</span>
+                              <code title={wallet.id}>{wallet.id}</code>
+                            </div>
+
+                            <button
+                              type="button"
+                              className="copy-button wallet-copy-button"
+                              aria-label={`Copy ${wallet.currency} wallet ID`}
+                              title="Copy wallet ID"
+                              onClick={() => copyWalletId(wallet.id)}
+                            >
+                              <Copy
+                                size={15}
+                                strokeWidth={1.9}
+                                aria-hidden="true"
+                              />
+                              {copiedWalletId === wallet.id ? "Copied" : "Copy ID"}
+                            </button>
+                          </div>
+                        </SpotlightCard>
+                      );
+                    })}
+                  </div>
+                )}
+              </Card>
+            </FadeContent>
+          </section>
+
+          <section id="wallet-activity">
+            <FadeContent delay={0.04}>
+              <SectionHeader
+                title="Wallet Activity"
+                description="View deposits and transfers recorded for each wallet."
+              />
+
+              <WalletActivityPanel
+                wallets={wallets}
+                refreshKey={walletActivityRefreshKey}
+                onNotify={showToast}
+              />
+            </FadeContent>
+          </section>
+
+          <section id="analytics">
+            <FadeContent delay={0.04}>
+              <SectionHeader
+                title="Analytics"
+                description="Visual insights based on your transaction categories."
+              />
+
+              <Suspense fallback={<AnalyticsFallback />}>
+                <AnalyticsPanel
+                  userId={currentUser.id}
+                  transactions={transactions}
+                />
+              </Suspense>
+            </FadeContent>
+          </section>
+
+          <section id="accounts" className="legacy-section">
+            <FadeContent delay={0.04}>
+              <SectionHeader
+                title="Accounts"
+                description="Connect bank accounts, cards, or savings spaces to organize your finances."
+                actions={
                   <Button
                     type="button"
-                    variant={
-                      wallets.length === 0 || showWalletForm
-                        ? "primary"
-                        : "secondary"
-                    }
-                    className={
-                      showWalletForm ? "action-toggle active" : "action-toggle"
-                    }
-                    onClick={() => {
-                      setShowWalletForm(!showWalletForm);
-                      setShowDepositForm(false);
-                      setShowTransferForm(false);
-                    }}
+                    onClick={() => setShowAccountForm(!showAccountForm)}
                   >
-                    {showWalletForm ? (
+                    {showAccountForm ? (
                       <>
                         <X size={16} strokeWidth={1.9} aria-hidden="true" />
                         Cancel
@@ -903,306 +1210,64 @@ function App() {
                     ) : (
                       <>
                         <Plus size={16} strokeWidth={1.9} aria-hidden="true" />
-                        Add Wallet
+                        Add Account
                       </>
                     )}
                   </Button>
-
-                  <Button
-                    type="button"
-                    variant={showDepositForm ? "primary" : "secondary"}
-                    className={
-                      showDepositForm ? "action-toggle active" : "action-toggle"
-                    }
-                    disabled={wallets.length === 0}
-                    onClick={() => {
-                      if (wallets.length === 0) {
-                        return;
-                      }
-
-                      setShowDepositForm(!showDepositForm);
-                      setShowWalletForm(false);
-                      setShowTransferForm(false);
-                    }}
-                  >
-                    {showDepositForm ? (
-                      <>
-                        <X size={16} strokeWidth={1.9} aria-hidden="true" />
-                        Cancel
-                      </>
-                    ) : (
-                      <>
-                        <ArrowDown
-                          size={16}
-                          strokeWidth={1.9}
-                          aria-hidden="true"
-                        />
-                        Deposit
-                      </>
-                    )}
-                  </Button>
-
-                  <Button
-                    type="button"
-                    variant={showTransferForm ? "primary" : "secondary"}
-                    className={
-                      showTransferForm
-                        ? "action-toggle active"
-                        : "action-toggle"
-                    }
-                    disabled={wallets.length === 0}
-                    onClick={() => {
-                      if (wallets.length === 0) {
-                        return;
-                      }
-
-                      setShowTransferForm(!showTransferForm);
-                      setShowWalletForm(false);
-                      setShowDepositForm(false);
-                    }}
-                  >
-                    {showTransferForm ? (
-                      <>
-                        <X size={16} strokeWidth={1.9} aria-hidden="true" />
-                        Cancel
-                      </>
-                    ) : (
-                      <>
-                        <Repeat2
-                          size={16}
-                          strokeWidth={1.9}
-                          aria-hidden="true"
-                        />
-                        Transfer
-                      </>
-                    )}
-                  </Button>
-                </>
-              }
-            />
-
-            {showWalletForm && (
-              <CreateWalletForm
-                onWalletCreated={handleWalletCreated}
-                onNotify={showToast}
+                }
               />
-            )}
 
-            {showDepositForm && (
-              <DepositWalletForm
-                wallets={wallets}
-                onDepositCompleted={handleDepositCompleted}
-                onNotify={showToast}
-              />
-            )}
-
-            {showTransferForm && (
-              <TransferWalletForm
-                wallets={wallets}
-                onTransferCompleted={handleTransferCompleted}
-                onNotify={showToast}
-              />
-            )}
-
-            <Card className="dashboard-card wallet-dashboard-card">
-              {isLoadingData ? (
-                <div className="wallet-grid wallet-skeleton-grid" aria-hidden="true">
-                  {[1, 2].map((item) => (
-                    <div className="wallet-card wallet-skeleton-card" key={item}>
-                      <div className="wallet-card-header">
-                        <span className="skeleton skeleton-icon"></span>
-                        <span className="skeleton skeleton-pill"></span>
-                      </div>
-                      <span className="skeleton skeleton-value"></span>
-                      <span className="skeleton skeleton-line"></span>
-                      <span className="skeleton skeleton-line short"></span>
-                    </div>
-                  ))}
-                </div>
-              ) : wallets.length === 0 ? (
-                <EmptyState
-                  icon={Wallet}
-                  title="No wallets yet"
-                  description="Create your first wallet to unlock deposits, transfers, and activity history."
-                >
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      setShowWalletForm(true);
-                      setShowDepositForm(false);
-                      setShowTransferForm(false);
-                    }}
-                  >
-                    <Plus size={16} strokeWidth={1.9} aria-hidden="true" />
-                    Create First Wallet
-                  </Button>
-                </EmptyState>
-              ) : (
-                <div className="wallet-grid">
-                  {wallets.map((wallet) => {
-                    const statusText = getWalletStatusText(wallet.status);
-                    const statusClass =
-                      statusText.toLowerCase() === "active" ? "active" : "muted";
-
-                    return (
-                      <article
-                        className={
-                          recentlyUpdatedWalletIds.includes(wallet.id)
-                            ? "wallet-card balance-updated"
-                            : "wallet-card"
-                        }
-                        key={wallet.id}
-                        tabIndex="0"
-                      >
-                        <div className="wallet-card-header">
-                          <div className="wallet-title-group">
-                            <div className="wallet-icon">
-                              {getWalletIcon(wallet.currency)}
-                            </div>
-
-                            <div>
-                              <h3>{wallet.currency} Wallet</h3>
-                              <p>Currency wallet</p>
-                            </div>
-                          </div>
-
-                          <span className={`wallet-status ${statusClass}`}>
-                            {statusText}
-                          </span>
-                        </div>
-
-                        <div className="wallet-balance-block">
-                          <span>Available balance</span>
-                          <strong>
-                            {formatCurrency(
-                              getWalletBalance(wallet),
-                              wallet.currency
-                            )}
-                          </strong>
-                        </div>
-
-                        <div className="wallet-meta-grid">
-                          <div className="wallet-id-block">
-                            <span>Wallet ID</span>
-                            <code title={wallet.id}>{wallet.id}</code>
-                          </div>
-
-                          <button
-                            type="button"
-                            className="copy-button wallet-copy-button"
-                            aria-label={`Copy ${wallet.currency} wallet ID`}
-                            title="Copy wallet ID"
-                            onClick={() => copyWalletId(wallet.id)}
-                          >
-                            <Copy size={15} strokeWidth={1.9} aria-hidden="true" />
-                            {copiedWalletId === wallet.id ? "Copied" : "Copy ID"}
-                          </button>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              )}
-            </Card>
-          </section>
-
-          <section id="wallet-activity">
-            <SectionHeader
-              title="Wallet Activity"
-              description="View deposits and transfers recorded for each wallet."
-            />
-
-            <WalletActivityPanel
-              wallets={wallets}
-              refreshKey={walletActivityRefreshKey}
-              onNotify={showToast}
-            />
-          </section>
-
-          <section id="analytics">
-            <SectionHeader
-              title="Analytics"
-              description="Visual insights based on your transaction categories."
-            />
-
-            <Suspense fallback={<AnalyticsFallback />}>
-              <AnalyticsPanel
-                userId={currentUser.id}
-                transactions={transactions}
-              />
-            </Suspense>
-          </section>
-
-          <section id="accounts" className="legacy-section">
-            <SectionHeader
-              title="Accounts"
-              description="Connect bank accounts, cards, or savings spaces to organize your finances."
-              actions={
-                <Button
-                  type="button"
-                  onClick={() => setShowAccountForm(!showAccountForm)}
-                >
-                  {showAccountForm ? (
-                    <>
-                      <X size={16} strokeWidth={1.9} aria-hidden="true" />
-                      Cancel
-                    </>
-                  ) : (
-                    <>
-                      <Plus size={16} strokeWidth={1.9} aria-hidden="true" />
-                      Add Account
-                    </>
-                  )}
-                </Button>
-              }
-            />
-
-            {showAccountForm && (
-              <CreateAccountForm
-                userId={currentUser.id}
-                onAccountCreated={handleAccountCreated}
-              />
-            )}
-
-            <Card className="dashboard-card">
-              {accounts.length === 0 ? (
-                <EmptyState
-                  icon={Landmark}
-                  title="No accounts yet"
-                  description="Add a wallet, bank account, or savings account to start organizing your finances."
+              {showAccountForm && (
+                <CreateAccountForm
+                  userId={currentUser.id}
+                  onAccountCreated={handleAccountCreated}
+                  onNotify={showToast}
                 />
-              ) : (
-                <div className="data-list">
-                  {accounts.map((account) => (
-                    <div className="data-row account-row" key={account.id}>
-                      <div className="account-left">
-                        <div className="account-icon">
-                          {getAccountIcon(account.accountType)}
-                        </div>
-
-                        <div>
-                          <h3>{account.name}</h3>
-
-                          <p>
-                            {account.institution || "No institution"} -{" "}
-                            {account.accountType} account
-                          </p>
-
-                          <small>Created {formatDate(account.createdAt)}</small>
-                        </div>
-                      </div>
-
-                      <span className="badge">{account.currency}</span>
-                    </div>
-                  ))}
-                </div>
               )}
-            </Card>
+
+              <Card className="dashboard-card">
+                {accounts.length === 0 ? (
+                  <EmptyState
+                    icon={Landmark}
+                    title="No accounts yet"
+                    description="Add a wallet, bank account, or savings account to start organizing your finances."
+                  />
+                ) : (
+                  <div className="data-list">
+                    {accounts.map((account) => (
+                      <div className="data-row account-row" key={account.id}>
+                        <div className="account-left">
+                          <div className="account-icon">
+                            {getAccountIcon(account.accountType)}
+                          </div>
+
+                          <div>
+                            <h3>{account.name}</h3>
+
+                            <p>
+                              {account.institution || "No institution"} -{" "}
+                              {account.accountType} account
+                            </p>
+
+                            <small>
+                              Created {formatDate(account.createdAt)}
+                            </small>
+                          </div>
+                        </div>
+
+                        <span className="badge">{account.currency}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            </FadeContent>
           </section>
 
           {accounts.length > 0 && (
             <>
               <section id="transactions" className="legacy-section">
+                <FadeContent delay={0.04}>
                 <SectionHeader
                   title="Transactions"
                   description="Track, search, filter and sort your spending activity."
@@ -1233,6 +1298,7 @@ function App() {
                     userId={currentUser.id}
                     accounts={accounts}
                     onTransactionCreated={handleTransactionCreated}
+                    onNotify={showToast}
                   />
                 )}
 
@@ -1351,9 +1417,11 @@ function App() {
                     </>
                   )}
                 </Card>
+                </FadeContent>
               </section>
 
               <section id="budgets" className="legacy-section">
+                <FadeContent delay={0.04}>
                 <SectionHeader
                   title="Budgets"
                   description="Set monthly limits and monitor how much budget remains."
@@ -1381,6 +1449,7 @@ function App() {
                   <CreateBudgetForm
                     userId={currentUser.id}
                     onBudgetCreated={handleBudgetCreated}
+                    onNotify={showToast}
                   />
                 )}
 
@@ -1517,6 +1586,7 @@ function App() {
                     </div>
                   )}
                 </Card>
+                </FadeContent>
               </section>
             </>
           )}

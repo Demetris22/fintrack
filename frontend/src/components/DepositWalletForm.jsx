@@ -33,6 +33,11 @@ function DepositWalletForm({ wallets, onDepositCompleted, onNotify }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    if (isSubmitting) {
+      return;
+    }
+
     setError("");
 
     if (!effectiveWalletId) {
@@ -48,7 +53,7 @@ function DepositWalletForm({ wallets, onDepositCompleted, onNotify }) {
     try {
       setIsSubmitting(true);
 
-      await depositToWallet(effectiveWalletId, amount);
+      await depositToWallet(effectiveWalletId, amountNumber);
 
       setAmount("");
 

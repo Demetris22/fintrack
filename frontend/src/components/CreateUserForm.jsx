@@ -13,15 +13,20 @@ function CreateUserForm({ onUserCreated, onNotify }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    if (isSubmitting) {
+      return;
+    }
+
     setMessage("");
     setError("");
     setIsSubmitting(true);
 
     try {
       await createUser({
-        email,
+        email: email.trim(),
         password,
-        fullName,
+        fullName: fullName.trim(),
       });
 
       setEmail("");

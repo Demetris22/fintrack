@@ -1,11 +1,14 @@
+using FinTrack.Api.Auth;
 using FinTrack.Api.Data;
 using FinTrack.Api.DTOs.Analytics;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinTrack.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("analytics")]
 public class AnalyticsController : ControllerBase
 {
@@ -18,8 +21,12 @@ public class AnalyticsController : ControllerBase
     [HttpGet("spending-by-category")]
     public async Task<IActionResult> SpendingByCategory([FromQuery] Guid userId)
     {
+        var currentUserId = User.GetUserId();
+        if (userId != currentUserId)
+            return Forbid();
+
         var breakdown = await _db.Transactions
-            .Where(t => t.UserId == userId)
+            .Where(t => t.UserId == currentUserId)
             .GroupBy(t => t.Category)
             .Select(g => new CategorySpendingResponse
             {
@@ -29,6 +36,6 @@ public class AnalyticsController : ControllerBase
             .OrderByDescending(x => x.Total)
             .ToListAsync();
 
-        return Ok(new { userId, breakdown });
+        return Ok(new { userId = currentUserId, breakdown });
     }
 }

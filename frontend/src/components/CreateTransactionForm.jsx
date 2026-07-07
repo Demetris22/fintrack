@@ -3,7 +3,7 @@ import { createTransaction } from "../services/api";
 import { categoryOptions } from "../utils/categoryStyles";
 import { Button, FormCard, FormField, SelectInput, TextInput } from "./ui";
 
-function CreateTransactionForm({ userId, accounts, onTransactionCreated }) {
+function CreateTransactionForm({ userId, accounts, onTransactionCreated, onNotify }) {
   const [accountId, setAccountId] = useState("");
   const [amount, setAmount] = useState("");
   const [merchant, setMerchant] = useState("");
@@ -11,6 +11,7 @@ function CreateTransactionForm({ userId, accounts, onTransactionCreated }) {
   const [description, setDescription] = useState("");
   const [transactionDate, setTransactionDate] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const accountExists = accounts.some((account) => account.id === accountId);
   const effectiveAccountId =
@@ -18,10 +19,22 @@ function CreateTransactionForm({ userId, accounts, onTransactionCreated }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    if (isSubmitting) {
+      return;
+    }
+
     setError("");
 
     if (!effectiveAccountId) {
       setError("Please select an account.");
+      return;
+    }
+
+    const amountNumber = Number(amount);
+
+    if (amountNumber <= 0) {
+      setError("Amount must be greater than 0.");
       return;
     }
 
@@ -30,15 +43,22 @@ function CreateTransactionForm({ userId, accounts, onTransactionCreated }) {
       return;
     }
 
+    if (!transactionDate) {
+      setError("Please choose a transaction date.");
+      return;
+    }
+
     try {
+      setIsSubmitting(true);
+
       const transaction = await createTransaction({
         userId,
         accountId: effectiveAccountId,
-        amount: Number(amount),
+        amount: amountNumber,
         currency: "EUR",
-        merchant,
+        merchant: merchant.trim(),
         category,
-        description,
+        description: description.trim(),
         transactionDate,
       });
 
@@ -50,7 +70,12 @@ function CreateTransactionForm({ userId, accounts, onTransactionCreated }) {
       setDescription("");
       setTransactionDate("");
     } catch (err) {
-      setError(err.message);
+      const message = err.message || "Could not create transaction.";
+
+      setError(message);
+      onNotify?.({ type: "error", message });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -129,7 +154,18 @@ function CreateTransactionForm({ userId, accounts, onTransactionCreated }) {
         </FormField>
 
         <div className="form-actions full-width">
-          <Button type="submit">Create Transaction</Button>
+          <Button
+            type="submit"
+            isLoading={isSubmitting}
+            disabled={
+              !effectiveAccountId ||
+              Number(amount) <= 0 ||
+              !category ||
+              !transactionDate
+            }
+          >
+            {isSubmitting ? "Creating…" : "Create Transaction"}
+          </Button>
         </div>
       </form>
 

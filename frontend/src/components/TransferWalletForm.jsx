@@ -77,6 +77,11 @@ function TransferWalletForm({ wallets, onTransferCompleted, onNotify }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    if (isSubmitting) {
+      return;
+    }
+
     setError("");
 
     if (!effectiveSourceWalletId) {

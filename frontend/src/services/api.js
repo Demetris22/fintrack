@@ -1,4 +1,85 @@
-const API_URL = import.meta.env.VITE_API_URL || "/api";
+const API_URL = normalizeApiUrl(import.meta.env.VITE_API_URL || "/api");
+
+function normalizeApiUrl(url) {
+  const trimmedUrl = String(url || "").trim();
+
+  if (!trimmedUrl || trimmedUrl === "/") {
+    return "";
+  }
+
+  return trimmedUrl.replace(/\/+$/, "");
+}
+
+function buildApiUrl(endpoint) {
+  const safeEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+
+  return `${API_URL}${safeEndpoint}`;
+}
+
+function flattenValidationErrors(errors) {
+  if (!errors || typeof errors !== "object") {
+    return "";
+  }
+
+  return Object.values(errors)
+    .flat()
+    .filter(Boolean)
+    .join(" ");
+}
+
+function getProblemMessage(status, data) {
+  const validationMessage = flattenValidationErrors(data?.errors);
+  const serverMessage =
+    data?.message ||
+    data?.title ||
+    data?.detail ||
+    (typeof data === "string" ? data : "");
+
+  if (validationMessage) {
+    return validationMessage;
+  }
+
+  if (serverMessage && !String(serverMessage).includes("One or more validation errors")) {
+    return serverMessage;
+  }
+
+  if (status === 400) {
+    return "Please check the information and try again.";
+  }
+
+  if (status === 401) {
+    return "Your session expired. Please sign out and sign in again.";
+  }
+
+  if (status === 403) {
+    return "You are not allowed to perform this action.";
+  }
+
+  if (status === 404) {
+    return "We could not find that record. Refresh the page and try again.";
+  }
+
+  if (status === 409) {
+    return "That item already exists.";
+  }
+
+  if (status === 422) {
+    return "This action cannot be completed with the current data.";
+  }
+
+  if (status >= 500) {
+    return "The FinTrack service had a problem. Please try again in a moment.";
+  }
+
+  return `Request failed with status ${status}.`;
+}
+
+function createApiError(message, status, data) {
+  const error = new Error(message);
+  error.status = status;
+  error.data = data;
+  return error;
+}
 
 async function request(endpoint, options = {}, config = {}) {
   const token = localStorage.getItem("token");
@@ -12,10 +93,20 @@ async function request(endpoint, options = {}, config = {}) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  let response;
+
+  try {
+    response = await fetch(buildApiUrl(endpoint), {
+      ...options,
+      headers,
+    });
+  } catch {
+    throw createApiError(
+      "Could not reach the FinTrack API. Check your connection and try again.",
+      0,
+      null
+    );
+  }
 
   const rawText = await response.text();
 
@@ -28,44 +119,28 @@ async function request(endpoint, options = {}, config = {}) {
   }
 
   if (!response.ok) {
-    console.error("API error:", {
-      endpoint,
-      status: response.status,
-      data,
-    });
+    if (import.meta.env.DEV) {
+      console.warn("API error:", {
+        endpoint,
+        status: response.status,
+        data,
+      });
+    }
 
     if (response.status === 401) {
-      const error = new Error(
+      throw createApiError(
         config.unauthorizedMessage ||
-          "Your session expired. Please sign out and sign in again."
+          getProblemMessage(response.status, data),
+        response.status,
+        data
       );
-      error.status = response.status;
-      throw error;
     }
 
-    if (response.status === 403) {
-      const error = new Error("You are not allowed to perform this action.");
-      error.status = response.status;
-      throw error;
-    }
-
-    if (response.status === 409) {
-      const error = new Error(
-        data?.message || data?.title || "Wallet already exists."
-      );
-      error.status = response.status;
-      throw error;
-    }
-
-    const error = new Error(
-      data?.message ||
-        data?.title ||
-        data?.detail ||
-        data ||
-        `Request failed with status ${response.status}`
+    throw createApiError(
+      getProblemMessage(response.status, data),
+      response.status,
+      data
     );
-    error.status = response.status;
-    throw error;
   }
 
   return data;

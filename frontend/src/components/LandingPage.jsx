@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { motion } from "motion/react";
 import {
   ArrowRight,
@@ -12,7 +13,10 @@ import heroImage from "../assets/hero.png";
 import CreateUserForm from "./CreateUserForm";
 import SignInForm from "./SignInForm";
 import SummaryCards from "./SummaryCards";
+import FadeContent from "./FadeContent";
 import { Button } from "./ui";
+
+const Aurora = lazy(() => import("./Aurora"));
 
 const heroContainer = {
   hidden: { opacity: 1 },
@@ -52,6 +56,8 @@ const previewBudgets = [
   { id: "preview-budget-bills", category: "Bills", monthlyLimit: 620 },
   { id: "preview-budget-food", category: "Food", monthlyLimit: 420 },
 ];
+
+const LANDING_AURORA_COLORS = ["#2458d3", "#0f8a5f", "#dbe7ff"];
 
 const featureCards = [
   {
@@ -111,6 +117,19 @@ function LandingPage({
         animate="show"
         variants={heroContainer}
       >
+        {!shouldReduceMotion && (
+          <div className="hero-aurora-layer landing-aurora" aria-hidden="true">
+            <Suspense fallback={null}>
+              <Aurora
+                colorStops={LANDING_AURORA_COLORS}
+                amplitude={0.38}
+                blend={0.24}
+                speed={0.2}
+              />
+            </Suspense>
+          </div>
+        )}
+
         <div className="hero-copy landing-hero-copy">
           <motion.div className="hero-badge" variants={heroItem}>
             Smart finance workspace
@@ -199,63 +218,55 @@ function LandingPage({
         </motion.div>
       </motion.section>
 
-      <motion.section
-        className="landing-feature-section"
-        initial={shouldReduceMotion ? false : { opacity: 0.96, y: 12 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.24 }}
-        transition={{ duration: 0.68, ease: [0.16, 1, 0.3, 1] }}
-      >
-        <div className="landing-section-copy">
-          <h2>Designed for the money you actually move.</h2>
-          <p>
-            FinTrack keeps the daily tasks close together: balances, deposits,
-            transfers, budgets, and spending signals.
-          </p>
-        </div>
+      <FadeContent delay={0.06} threshold={0.22}>
+        <section className="landing-feature-section">
+          <div className="landing-section-copy">
+            <h2>Designed for the money you actually move.</h2>
+            <p>
+              FinTrack keeps the daily tasks close together: balances, deposits,
+              transfers, budgets, and spending signals.
+            </p>
+          </div>
 
-        <div className="landing-feature-grid">
-          {featureCards.map((feature, index) => {
-            const Icon = feature.icon;
+          <div className="landing-feature-grid">
+            {featureCards.map((feature, index) => {
+              const Icon = feature.icon;
 
-            return (
-              <article
-                className="landing-feature-card"
-                key={feature.title}
-                style={{ "--feature-index": index }}
-              >
-                <span className="landing-feature-icon" aria-hidden="true">
-                  <Icon size={22} strokeWidth={1.9} />
-                </span>
+              return (
+                <article
+                  className="landing-feature-card"
+                  key={feature.title}
+                  style={{ "--feature-index": index }}
+                >
+                  <span className="landing-feature-icon" aria-hidden="true">
+                    <Icon size={22} strokeWidth={1.9} />
+                  </span>
 
-                <h3>{feature.title}</h3>
-                <p>{feature.description}</p>
-              </article>
-            );
-          })}
-        </div>
-      </motion.section>
+                  <h3>{feature.title}</h3>
+                  <p>{feature.description}</p>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      </FadeContent>
 
-      <motion.section
-        className="landing-cta-panel"
-        initial={shouldReduceMotion ? false : { opacity: 0.96, y: 10 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.35 }}
-        transition={{ duration: 0.64, ease: [0.16, 1, 0.3, 1] }}
-      >
-        <div>
-          <ShieldCheck size={24} strokeWidth={1.9} aria-hidden="true" />
-          <h2>Start with one wallet. Add the rest as your workflow grows.</h2>
-          <p>
-            The dashboard opens up as you create wallets, accounts,
-            transactions, and budgets.
-          </p>
-        </div>
+      <FadeContent delay={0.04} threshold={0.24}>
+        <section className="landing-cta-panel">
+          <div>
+            <ShieldCheck size={24} strokeWidth={1.9} aria-hidden="true" />
+            <h2>Start with one wallet. Add the rest as your workflow grows.</h2>
+            <p>
+              The dashboard opens up as you create wallets, accounts,
+              transactions, and budgets.
+            </p>
+          </div>
 
-        <Button type="button" onClick={() => scrollToAuth("register")}>
-          Create workspace
-        </Button>
-      </motion.section>
+          <Button type="button" onClick={() => scrollToAuth("register")}>
+            Create workspace
+          </Button>
+        </section>
+      </FadeContent>
     </>
   );
 }

@@ -1,12 +1,15 @@
+using FinTrack.Api.Auth;
 using FinTrack.Api.Data;
 using FinTrack.Api.DTOs.Accounts;
 using FinTrack.Api.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinTrack.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("accounts")]
 public class AccountsController : ControllerBase
 {
@@ -17,17 +20,22 @@ public class AccountsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateAccountRequest request)
     {
-        var userExists = await _db.Users.AnyAsync(u => u.Id == request.UserId);
+        var currentUserId = User.GetUserId();
+
+        if (request.UserId != currentUserId)
+            return Forbid();
+
+        var userExists = await _db.Users.AnyAsync(u => u.Id == currentUserId);
         if (!userExists)
             return BadRequest(new { message = "User not found." });
 
         var account = new Account
         {
-            UserId = request.UserId,
-            Name = request.Name,
-            Institution = request.Institution,
-            AccountType = request.AccountType,
-            Currency = string.IsNullOrWhiteSpace(request.Currency) ? "EUR" : request.Currency,
+            UserId = currentUserId,
+            Name = request.Name.Trim(),
+            Institution = string.IsNullOrWhiteSpace(request.Institution) ? null : request.Institution.Trim(),
+            AccountType = request.AccountType.Trim(),
+            Currency = request.Currency.Trim().ToUpperInvariant(),
         };
 
         _db.Accounts.Add(account);
@@ -39,9 +47,12 @@ public class AccountsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> List([FromQuery] Guid? userId)
     {
+        var currentUserId = User.GetUserId();
+        if (userId.HasValue && userId.Value != currentUserId)
+            return Forbid();
+
         var query = _db.Accounts.AsQueryable();
-        if (userId.HasValue)
-            query = query.Where(a => a.UserId == userId.Value);
+        query = query.Where(a => a.UserId == currentUserId);
 
         var accounts = await query.OrderByDescending(a => a.CreatedAt).ToListAsync();
         return Ok(accounts.Select(ToResponse));
@@ -50,8 +61,12 @@ public class AccountsController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
+        var currentUserId = User.GetUserId();
         var account = await _db.Accounts.FindAsync(id);
         if (account is null)
+            return NotFound();
+
+        if (account.UserId != currentUserId)
             return NotFound();
 
         return Ok(ToResponse(account));

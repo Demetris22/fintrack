@@ -27,10 +27,17 @@ public class WalletsController : ControllerBase
     {
         var name = string.IsNullOrWhiteSpace(request.Name)
             ? $"{request.Currency.ToUpperInvariant()} Wallet"
-            : request.Name;
+            : request.Name.Trim();
 
-        var wallet = await _walletService.CreateWalletAsync(User.GetUserId(), request.Currency, name);
-        return CreatedAtAction(nameof(GetById), new { id = wallet.Id }, ToResponse(wallet));
+        try
+        {
+            var wallet = await _walletService.CreateWalletAsync(User.GetUserId(), request.Currency, name);
+            return CreatedAtAction(nameof(GetById), new { id = wallet.Id }, ToResponse(wallet));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpGet]
@@ -111,7 +118,7 @@ public class WalletsController : ControllerBase
                 request.DestinationWalletId,
                 request.Amount,
                 request.Currency,
-                request.Description);
+                string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim());
 
             return Ok(ToResponse(ledgerTransaction));
         }

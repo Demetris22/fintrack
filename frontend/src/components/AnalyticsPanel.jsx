@@ -26,8 +26,11 @@ function AnalyticsPanel({ userId, transactions }) {
 
     try {
       const data = await getSpendingByCategory(userId);
+      const nextBreakdown = Array.isArray(data?.breakdown)
+        ? data.breakdown
+        : [];
 
-      const sortedBreakdown = [...data.breakdown].sort(
+      const sortedBreakdown = [...nextBreakdown].sort(
         (a, b) => Number(b.total) - Number(a.total)
       );
 

@@ -19,7 +19,8 @@ public class WalletService : IWalletService
 
     public async Task<Wallet> CreateWalletAsync(Guid userId, string currency, string name, CancellationToken cancellationToken = default)
     {
-        currency = currency.ToUpperInvariant();
+        currency = NormalizeCurrency(currency);
+        name = string.IsNullOrWhiteSpace(name) ? $"{currency} Wallet" : name.Trim();
 
         var wallet = new Wallet
         {
@@ -47,8 +48,8 @@ public class WalletService : IWalletService
 
     public async Task<(string FullName, List<Wallet> Wallets)?> LookupWalletsByEmailAsync(string email, string currency, CancellationToken cancellationToken = default)
     {
-        currency = currency.ToUpperInvariant();
-        var normalizedEmail = email.ToLowerInvariant();
+        currency = NormalizeCurrency(currency);
+        var normalizedEmail = email.Trim().ToLowerInvariant();
 
         var user = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail, cancellationToken);
         if (user is null)
@@ -142,6 +143,8 @@ public class WalletService : IWalletService
 
     private async Task<Guid> GetOrCreateSystemWalletIdAsync(string currency, CancellationToken cancellationToken)
     {
+        currency = NormalizeCurrency(currency);
+
         var existingId = await _db.Wallets.AsNoTracking()
             .Where(w => w.IsSystem && w.Currency == currency)
             .Select(w => (Guid?)w.Id)
@@ -208,4 +211,13 @@ public class WalletService : IWalletService
         return systemWallet.Id;
     }
 
+    private static string NormalizeCurrency(string currency)
+    {
+        var normalizedCurrency = currency.Trim().ToUpperInvariant();
+
+        if (normalizedCurrency.Length != 3 || normalizedCurrency.Any(character => !char.IsLetter(character)))
+            throw new ArgumentException("Currency must be a 3-letter code.", nameof(currency));
+
+        return normalizedCurrency;
+    }
 }

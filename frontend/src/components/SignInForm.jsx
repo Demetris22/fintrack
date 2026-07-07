@@ -11,12 +11,17 @@ function SignInForm({ onUserSignedIn, onNotify }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    if (isSubmitting) {
+      return;
+    }
+
     setError("");
     setIsSubmitting(true);
 
     try {
       const data = await loginUser({
-        email,
+        email: email.trim(),
         password,
       });
 

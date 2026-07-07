@@ -32,7 +32,8 @@ public class TransferService : ITransferService
         if (amount <= 0)
             throw new ArgumentException("Amount must be greater than zero.", nameof(amount));
 
-        currency = currency.ToUpperInvariant();
+        currency = NormalizeCurrency(currency);
+        description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
         var amountMinor = MoneyMath.ToMinorUnits(amount);
 
         // Fail-fast checks against untracked reads, before paying the cost of a transaction.
@@ -102,4 +103,13 @@ public class TransferService : ITransferService
             throw new CurrencyMismatchException();
     }
 
+    private static string NormalizeCurrency(string currency)
+    {
+        var normalizedCurrency = currency.Trim().ToUpperInvariant();
+
+        if (normalizedCurrency.Length != 3 || normalizedCurrency.Any(character => !char.IsLetter(character)))
+            throw new ArgumentException("Currency must be a 3-letter code.", nameof(currency));
+
+        return normalizedCurrency;
+    }
 }

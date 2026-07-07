@@ -3,7 +3,7 @@ import { createBudget } from "../services/api";
 import { categoryOptions } from "../utils/categoryStyles";
 import { Button, FormCard, FormField, SelectInput, TextInput } from "./ui";
 
-function CreateBudgetForm({ userId, onBudgetCreated }) {
+function CreateBudgetForm({ userId, onBudgetCreated, onNotify }) {
   const [category, setCategory] = useState("");
   const [monthlyLimit, setMonthlyLimit] = useState("");
   const [currency, setCurrency] = useState("EUR");
@@ -12,10 +12,22 @@ function CreateBudgetForm({ userId, onBudgetCreated }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    if (isSubmitting) {
+      return;
+    }
+
     setError("");
 
     if (!category) {
       setError("Please select a category.");
+      return;
+    }
+
+    const monthlyLimitNumber = Number(monthlyLimit);
+
+    if (monthlyLimitNumber <= 0) {
+      setError("Monthly limit must be greater than 0.");
       return;
     }
 
@@ -25,7 +37,7 @@ function CreateBudgetForm({ userId, onBudgetCreated }) {
       const budget = await createBudget({
         userId,
         category,
-        monthlyLimit: Number(monthlyLimit),
+        monthlyLimit: monthlyLimitNumber,
         currency,
       });
 
@@ -35,7 +47,10 @@ function CreateBudgetForm({ userId, onBudgetCreated }) {
       setMonthlyLimit("");
       setCurrency("EUR");
     } catch (err) {
-      setError(err.message);
+      const message = err.message || "Could not create budget.";
+
+      setError(message);
+      onNotify?.({ type: "error", message });
     } finally {
       setIsSubmitting(false);
     }
@@ -83,7 +98,11 @@ function CreateBudgetForm({ userId, onBudgetCreated }) {
         </FormField>
 
         <div className="form-actions full-width">
-          <Button type="submit" isLoading={isSubmitting}>
+          <Button
+            type="submit"
+            isLoading={isSubmitting}
+            disabled={!category || Number(monthlyLimit) <= 0}
+          >
             {isSubmitting ? "Creating…" : "Create Budget"}
           </Button>
         </div>

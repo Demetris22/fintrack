@@ -1,12 +1,15 @@
+using FinTrack.Api.Auth;
 using FinTrack.Api.Data;
 using FinTrack.Api.DTOs.Transactions;
 using FinTrack.Api.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinTrack.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("transactions")]
 public class TransactionsController : ControllerBase
 {
@@ -17,7 +20,12 @@ public class TransactionsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateTransactionRequest request)
     {
-        var userExists = await _db.Users.AnyAsync(u => u.Id == request.UserId);
+        var currentUserId = User.GetUserId();
+
+        if (request.UserId != currentUserId)
+            return Forbid();
+
+        var userExists = await _db.Users.AnyAsync(u => u.Id == currentUserId);
         if (!userExists)
             return BadRequest(new { message = "User not found." });
 
@@ -25,18 +33,18 @@ public class TransactionsController : ControllerBase
         if (account is null)
             return BadRequest(new { message = "Account not found." });
 
-        if (account.UserId != request.UserId)
+        if (account.UserId != currentUserId)
             return BadRequest(new { message = "Account does not belong to the specified user." });
 
         var transaction = new Transaction
         {
-            UserId = request.UserId,
+            UserId = currentUserId,
             AccountId = request.AccountId,
             Amount = request.Amount,
-            Currency = string.IsNullOrWhiteSpace(request.Currency) ? "EUR" : request.Currency,
-            Merchant = request.Merchant,
-            Category = request.Category,
-            Description = request.Description,
+            Currency = request.Currency.Trim().ToUpperInvariant(),
+            Merchant = string.IsNullOrWhiteSpace(request.Merchant) ? null : request.Merchant.Trim(),
+            Category = request.Category?.Trim(),
+            Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
             TransactionDate = request.TransactionDate,
         };
 
@@ -49,9 +57,12 @@ public class TransactionsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> List([FromQuery] Guid? userId, [FromQuery] Guid? accountId)
     {
+        var currentUserId = User.GetUserId();
+        if (userId.HasValue && userId.Value != currentUserId)
+            return Forbid();
+
         var query = _db.Transactions.AsQueryable();
-        if (userId.HasValue)
-            query = query.Where(t => t.UserId == userId.Value);
+        query = query.Where(t => t.UserId == currentUserId);
         if (accountId.HasValue)
             query = query.Where(t => t.AccountId == accountId.Value);
 
@@ -66,8 +77,12 @@ public class TransactionsController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
+        var currentUserId = User.GetUserId();
         var transaction = await _db.Transactions.FindAsync(id);
         if (transaction is null)
+            return NotFound();
+
+        if (transaction.UserId != currentUserId)
             return NotFound();
 
         return Ok(ToResponse(transaction));

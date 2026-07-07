@@ -9,6 +9,11 @@ function CreateWalletForm({ onWalletCreated, onNotify }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    if (isSubmitting) {
+      return;
+    }
+
     setError("");
     setIsSubmitting(true);
 
