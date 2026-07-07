@@ -18,14 +18,14 @@
   --warning-soft: #fff4db;
   --danger: #c93434;
   --danger-soft: #fff0f0;
-  --shadow: 0 24px 70px rgba(25, 43, 72, 0.14);
+  --shadow: 0 20px 54px rgba(25, 43, 72, 0.12);
   --shadow-soft:
     0 1px 0 rgba(255, 255, 255, 0.78) inset,
     0 10px 28px rgba(25, 43, 72, 0.08);
-  --shadow-3d:
-    0 1px 0 rgba(255, 255, 255, 0.82) inset,
-    0 18px 34px rgba(25, 43, 72, 0.1),
-    0 42px 90px rgba(36, 88, 211, 0.12);
+  --shadow-floating:
+    0 1px 0 rgba(255, 255, 255, 0.84) inset,
+    0 18px 36px rgba(25, 43, 72, 0.1),
+    0 30px 70px rgba(25, 43, 72, 0.08);
   --radius-card: 8px;
   --radius-control: 8px;
   --radius-pill: 999px;
@@ -58,28 +58,6 @@ body {
     -apple-system,
     BlinkMacSystemFont,
     sans-serif;
-}
-
-.ledger-scene-3d {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-  opacity: 0.82;
-  mix-blend-mode: multiply;
-  mask-image: linear-gradient(
-    180deg,
-    rgba(0, 0, 0, 0.9) 0%,
-    rgba(0, 0, 0, 0.74) 58%,
-    transparent 100%
-  );
-}
-
-.ledger-scene-3d__canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
 }
 
 body::before {
@@ -405,7 +383,6 @@ li {
   font-size: 13px;
   font-weight: 800;
   box-shadow: 0 8px 18px rgba(25, 43, 72, 0.05);
-  transform: translateZ(10px);
   transition:
     transform 0.22s var(--ease),
     border-color 0.22s var(--ease),
@@ -417,7 +394,7 @@ li {
   border-color: rgba(36, 88, 211, 0.26);
   background: rgba(255, 255, 255, 0.9);
   box-shadow: 0 14px 28px rgba(25, 43, 72, 0.1);
-  transform: translateY(-2px) translateZ(16px);
+  transform: translateY(-2px);
 }
 
 .landing-benefit-strip svg {
@@ -1708,49 +1685,12 @@ section {
     .auth-panel-header,
     .top-nav
   ) {
-  transform-style: preserve-3d;
-  will-change: transform;
+  box-shadow: var(--shadow-soft);
   transition:
-    transform 0.28s var(--ease),
-    box-shadow 0.28s var(--ease),
-    border-color 0.28s var(--ease),
-    background 0.28s var(--ease);
-}
-
-:is(
-    .card,
-    .summary-card,
-    .wallet-card,
-    .data-row,
-    .budget-card,
-    .landing-feature-card,
-    .landing-cta-panel,
-    .dashboard-hero,
-    .dashboard-hero-panel,
-    .auth-panel-header,
-    .top-nav
-  )::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background:
-    radial-gradient(
-      circle at var(--glare-x, 50%) var(--glare-y, 0%),
-      rgba(255, 255, 255, 0.68),
-      rgba(255, 255, 255, 0.12) 24%,
-      transparent 48%
-    ),
-    linear-gradient(
-      135deg,
-      rgba(36, 88, 211, 0.05),
-      transparent 34%,
-      rgba(15, 138, 95, 0.05)
-    );
-  opacity: 0;
-  transition: opacity 0.24s var(--ease);
+    transform 0.24s var(--ease),
+    box-shadow 0.24s var(--ease),
+    border-color 0.24s var(--ease),
+    background 0.24s var(--ease);
 }
 
 :is(
@@ -1766,61 +1706,29 @@ section {
     .dashboard-hero-panel,
     .auth-panel-header,
     .top-nav
-  ).is-tilting {
-  box-shadow: var(--shadow-3d);
-  transform:
-    perspective(1100px)
-    rotateX(var(--tilt-x, 0deg))
-    rotateY(var(--tilt-y, 0deg))
-    translateY(-4px)
-    translateZ(10px);
+  ):focus-within {
+  box-shadow: var(--shadow-floating);
+  transform: translateY(-2px);
 }
 
-:is(
-    .card,
-    .summary-card,
-    .wallet-card,
-    .data-row,
-    .budget-card,
-    .empty-state,
-    .landing-feature-card,
-    .landing-cta-panel,
-    .dashboard-hero,
-    .dashboard-hero-panel,
-    .auth-panel-header,
-    .top-nav
-  ).is-tilting::before {
-  opacity: 1;
-}
-
-:where(
-    .card,
-    .summary-card,
-    .wallet-card,
-    .data-row,
-    .budget-card,
-    .landing-feature-card,
-    .landing-cta-panel,
-    .dashboard-hero,
-    .dashboard-hero-panel,
-    .auth-panel-header,
-    .top-nav
-  )
-  > * {
-  position: relative;
-  z-index: 1;
-}
-
-.summary-icon,
-.wallet-icon,
-.account-icon,
-.category-icon,
-.activity-icon,
-.empty-state-visual,
-.profile-avatar,
-.brand-mark,
-.landing-feature-icon {
-  transform: translateZ(18px);
+@media (hover: hover) and (pointer: fine) {
+  :is(
+      .card,
+      .summary-card,
+      .wallet-card,
+      .data-row,
+      .budget-card,
+      .empty-state,
+      .landing-feature-card,
+      .landing-cta-panel,
+      .dashboard-hero,
+      .dashboard-hero-panel,
+      .auth-panel-header,
+      .top-nav
+    ):hover {
+    box-shadow: var(--shadow-floating);
+    transform: translateY(-3px);
+  }
 }
 
 .empty-state::before {
@@ -2192,12 +2100,6 @@ select:focus-visible,
 
   .dot-grid.app-dot-grid {
     mix-blend-mode: screen;
-  }
-
-  .ledger-scene-3d {
-    opacity: 0.58;
-    mix-blend-mode: screen;
-    filter: saturate(1.15);
   }
 
   .dot-grid.app-dot-grid::before {
