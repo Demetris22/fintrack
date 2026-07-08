@@ -87,6 +87,8 @@ function CreateTransactionForm({ userId, accounts, onTransactionCreated, onNotif
       <form onSubmit={handleSubmit} className="form-grid">
         <FormField label="Account">
           <SelectInput
+            name="transaction-account"
+            autoComplete="off"
             value={effectiveAccountId}
             onChange={(e) => setAccountId(e.target.value)}
             required
@@ -102,8 +104,12 @@ function CreateTransactionForm({ userId, accounts, onTransactionCreated, onNotif
         <FormField label="Amount">
           <TextInput
             type="number"
+            name="transaction-amount"
+            autoComplete="off"
+            inputMode="decimal"
+            min="0.01"
             step="0.01"
-            placeholder="Example: 25.50"
+            placeholder="25.50..."
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             required
@@ -113,7 +119,9 @@ function CreateTransactionForm({ userId, accounts, onTransactionCreated, onNotif
         <FormField label="Merchant">
           <TextInput
             type="text"
-            placeholder="Example: Starbucks, Lidl, Gym"
+            name="merchant"
+            autoComplete="off"
+            placeholder="Starbucks, Lidl, Gym..."
             value={merchant}
             onChange={(e) => setMerchant(e.target.value)}
           />
@@ -121,6 +129,8 @@ function CreateTransactionForm({ userId, accounts, onTransactionCreated, onNotif
 
         <FormField label="Category">
           <SelectInput
+            name="transaction-category"
+            autoComplete="off"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             required
@@ -138,7 +148,9 @@ function CreateTransactionForm({ userId, accounts, onTransactionCreated, onNotif
         <FormField label="Description" fullWidth>
           <TextInput
             type="text"
-            placeholder="Optional note about this transaction"
+            name="transaction-description"
+            autoComplete="off"
+            placeholder="Optional note about this transaction..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
@@ -147,6 +159,8 @@ function CreateTransactionForm({ userId, accounts, onTransactionCreated, onNotif
         <FormField label="Transaction date">
           <TextInput
             type="date"
+            name="transaction-date"
+            autoComplete="off"
             value={transactionDate}
             onChange={(e) => setTransactionDate(e.target.value)}
             required
@@ -164,12 +178,12 @@ function CreateTransactionForm({ userId, accounts, onTransactionCreated, onNotif
               !transactionDate
             }
           >
-            {isSubmitting ? "Creating…" : "Create Transaction"}
+            {isSubmitting ? "Creating..." : "Create Transaction"}
           </Button>
         </div>
       </form>
 
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
     </FormCard>
   );
 }

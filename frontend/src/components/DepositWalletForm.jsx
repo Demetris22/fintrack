@@ -94,6 +94,8 @@ function DepositWalletForm({ wallets, onDepositCompleted, onNotify }) {
       <form onSubmit={handleSubmit} className="form-grid">
         <FormField label="Wallet">
           <SelectInput
+            name="deposit-wallet"
+            autoComplete="off"
             value={effectiveWalletId}
             onChange={(e) => setWalletId(e.target.value)}
             required
@@ -116,8 +118,12 @@ function DepositWalletForm({ wallets, onDepositCompleted, onNotify }) {
         <FormField label="Amount">
           <TextInput
             type="number"
+            name="deposit-amount"
+            autoComplete="off"
+            inputMode="decimal"
+            min="0.01"
             step="0.01"
-            placeholder="Example: 100"
+            placeholder="100..."
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             required
@@ -151,12 +157,12 @@ function DepositWalletForm({ wallets, onDepositCompleted, onNotify }) {
             disabled={isSubmitting || !canSubmit}
             isLoading={isSubmitting}
           >
-            {isSubmitting ? "Depositing…" : "Deposit"}
+            {isSubmitting ? "Depositing..." : "Deposit"}
           </Button>
         </div>
       </form>
 
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
     </FormCard>
   );
 }

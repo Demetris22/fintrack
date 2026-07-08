@@ -25,12 +25,12 @@ import CreateTransactionForm from "./components/CreateTransactionForm";
 import CreateBudgetForm from "./components/CreateBudgetForm";
 import SummaryCards from "./components/SummaryCards";
 import EmptyState from "./components/EmptyState";
-import DotGrid from "./components/DotGrid";
 import DashboardNav from "./components/DashboardNav";
 import LandingPage from "./components/LandingPage";
 import AnimatedCurrency from "./components/AnimatedCurrency";
 import SpotlightCard from "./components/SpotlightCard";
 import FadeContent from "./components/FadeContent";
+import SetupProgress from "./components/SetupProgress";
 import {
   Button,
   Card,
@@ -50,8 +50,55 @@ import { getCategoryStyle } from "./utils/categoryStyles";
 
 const AnalyticsPanel = lazy(() => import("./components/AnalyticsPanel"));
 const Aurora = lazy(() => import("./components/Aurora"));
+const DotGrid = lazy(() => import("./components/DotGrid"));
 
 const DASHBOARD_AURORA_COLORS = ["#2458d3", "#0f8a5f", "#b9c8ff"];
+const VALID_AUTH_MODES = new Set(["register", "signin"]);
+const VALID_ACTION_PANELS = new Set([
+  "wallet",
+  "deposit",
+  "transfer",
+  "account",
+  "transaction",
+  "budget",
+]);
+const VALID_TRANSACTION_SORTS = new Set([
+  "newest",
+  "oldest",
+  "highest",
+  "lowest",
+]);
+
+function getInitialDashboardState() {
+  if (typeof window === "undefined") {
+    return {
+      authMode: "register",
+      panel: "",
+      transactionSearch: "",
+      transactionCategoryFilter: "All",
+      transactionSort: "newest",
+      activeSection: "user",
+    };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const authMode = params.get("auth");
+  const panel = params.get("panel");
+  const transactionSort = params.get("sort");
+  const activeSection =
+    window.location.hash.replace("#", "") || params.get("section") || "user";
+
+  return {
+    authMode: VALID_AUTH_MODES.has(authMode) ? authMode : "register",
+    panel: VALID_ACTION_PANELS.has(panel) ? panel : "",
+    transactionSearch: params.get("search") || "",
+    transactionCategoryFilter: params.get("category") || "All",
+    transactionSort: VALID_TRANSACTION_SORTS.has(transactionSort)
+      ? transactionSort
+      : "newest",
+    activeSection,
+  };
+}
 
 const heroContainer = {
   hidden: { opacity: 1 },
@@ -95,6 +142,7 @@ function AnalyticsFallback() {
 
 function App() {
   const shouldReduceMotion = useReducedMotion();
+  const [initialDashboardState] = useState(getInitialDashboardState);
   const [currentUser, setCurrentUser] = useState(() => {
     const savedUser = localStorage.getItem("currentUser");
     const savedToken = localStorage.getItem("token");
@@ -117,7 +165,7 @@ function App() {
   const [transactions, setTransactions] = useState([]);
   const [budgets, setBudgets] = useState([]);
 
-  const [authMode, setAuthMode] = useState("register");
+  const [authMode, setAuthMode] = useState(initialDashboardState.authMode);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [dataError, setDataError] = useState("");
   const [walletActivityRefreshKey, setWalletActivityRefreshKey] = useState(0);
@@ -126,19 +174,37 @@ function App() {
   const [recentlyUpdatedWalletIds, setRecentlyUpdatedWalletIds] = useState([]);
   const [isSummaryUpdating, setIsSummaryUpdating] = useState(false);
 
-  const [showWalletForm, setShowWalletForm] = useState(false);
-  const [showDepositForm, setShowDepositForm] = useState(false);
-  const [showTransferForm, setShowTransferForm] = useState(false);
-  const [showAccountForm, setShowAccountForm] = useState(false);
-  const [showTransactionForm, setShowTransactionForm] = useState(false);
-  const [showBudgetForm, setShowBudgetForm] = useState(false);
+  const [showWalletForm, setShowWalletForm] = useState(
+    initialDashboardState.panel === "wallet"
+  );
+  const [showDepositForm, setShowDepositForm] = useState(
+    initialDashboardState.panel === "deposit"
+  );
+  const [showTransferForm, setShowTransferForm] = useState(
+    initialDashboardState.panel === "transfer"
+  );
+  const [showAccountForm, setShowAccountForm] = useState(
+    initialDashboardState.panel === "account"
+  );
+  const [showTransactionForm, setShowTransactionForm] = useState(
+    initialDashboardState.panel === "transaction"
+  );
+  const [showBudgetForm, setShowBudgetForm] = useState(
+    initialDashboardState.panel === "budget"
+  );
 
-  const [transactionSearch, setTransactionSearch] = useState("");
+  const [transactionSearch, setTransactionSearch] = useState(
+    initialDashboardState.transactionSearch
+  );
   const [transactionCategoryFilter, setTransactionCategoryFilter] =
-    useState("All");
-  const [transactionSort, setTransactionSort] = useState("newest");
+    useState(initialDashboardState.transactionCategoryFilter);
+  const [transactionSort, setTransactionSort] = useState(
+    initialDashboardState.transactionSort
+  );
 
-  const [activeSection, setActiveSection] = useState("user");
+  const [activeSection, setActiveSection] = useState(
+    initialDashboardState.activeSection
+  );
 
   const showToast = useCallback(({ type = "info", message }) => {
     if (!message) {
@@ -165,27 +231,83 @@ function App() {
     );
   }, []);
 
-  const handleSectionNavClick = useCallback(
-    (event, sectionId) => {
-      event.preventDefault();
+  const setActiveActionPanel = useCallback((panel = "") => {
+    setShowWalletForm(panel === "wallet");
+    setShowDepositForm(panel === "deposit");
+    setShowTransferForm(panel === "transfer");
+    setShowAccountForm(panel === "account");
+    setShowTransactionForm(panel === "transaction");
+    setShowBudgetForm(panel === "budget");
+  }, []);
 
+  const getOpenActionPanel = useCallback(() => {
+    if (showWalletForm) return "wallet";
+    if (showDepositForm) return "deposit";
+    if (showTransferForm) return "transfer";
+    if (showAccountForm) return "account";
+    if (showTransactionForm) return "transaction";
+    if (showBudgetForm) return "budget";
+    return "";
+  }, [
+    showAccountForm,
+    showBudgetForm,
+    showDepositForm,
+    showTransactionForm,
+    showTransferForm,
+    showWalletForm,
+  ]);
+
+  const scrollToSection = useCallback(
+    (sectionId) => {
       const targetSection = document.getElementById(sectionId);
 
       if (!targetSection) {
         return;
       }
 
-      setActiveSection(sectionId);
-      targetSection.scrollIntoView({
-        behavior: shouldReduceMotion ? "auto" : "smooth",
-        block: "start",
-      });
+      const stickyOffset = window.matchMedia("(max-width: 640px)").matches
+        ? 86
+        : 104;
+      const targetTop =
+        targetSection.getBoundingClientRect().top +
+        window.scrollY -
+        stickyOffset;
 
-      if (window.location.hash !== `#${sectionId}`) {
-        window.history.replaceState(null, "", `#${sectionId}`);
-      }
+      setActiveSection(sectionId);
+      window.scrollTo({
+        top: Math.max(targetTop, 0),
+        behavior: shouldReduceMotion ? "auto" : "smooth",
+      });
     },
     [shouldReduceMotion]
+  );
+
+  const handleSectionNavClick = useCallback(
+    (event, sectionId) => {
+      event.preventDefault();
+
+      scrollToSection(sectionId);
+
+      if (window.location.hash !== `#${sectionId}`) {
+        window.history.replaceState(
+          null,
+          "",
+          `${window.location.pathname}${window.location.search}#${sectionId}`
+        );
+      }
+    },
+    [scrollToSection]
+  );
+
+  const handleSetupStepAction = useCallback(
+    (step) => {
+      setActiveActionPanel(step.panel);
+
+      window.requestAnimationFrame(() => {
+        scrollToSection(step.sectionId);
+      });
+    },
+    [scrollToSection, setActiveActionPanel]
   );
 
   const markWalletsUpdated = useCallback((walletIds = []) => {
@@ -304,7 +426,10 @@ function App() {
     const updateActiveSection = () => {
       animationFrameId = 0;
 
-      const readingLine = Math.min(156, window.innerHeight * 0.24);
+      const readingLine = Math.min(
+        340,
+        Math.max(156, window.innerHeight * 0.42)
+      );
       let nextActiveSection = sections[0].id;
 
       for (const section of sections) {
@@ -396,6 +521,93 @@ function App() {
       inline: "center",
     });
   }, [activeSection, currentUser, shouldReduceMotion]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (!currentUser) {
+      if (authMode === "signin") {
+        params.set("auth", "signin");
+      } else {
+        params.delete("auth");
+      }
+
+      [
+        "panel",
+        "search",
+        "category",
+        "sort",
+        "section",
+      ].forEach((paramName) => params.delete(paramName));
+
+      const nextSearch = params.toString();
+      const nextUrl = `${window.location.pathname}${
+        nextSearch ? `?${nextSearch}` : ""
+      }${window.location.hash}`;
+
+      if (
+        `${window.location.pathname}${window.location.search}${window.location.hash}` !==
+        nextUrl
+      ) {
+        window.history.replaceState(null, "", nextUrl);
+      }
+
+      return;
+    }
+
+    params.delete("auth");
+
+    const openPanel = getOpenActionPanel();
+
+    if (openPanel) {
+      params.set("panel", openPanel);
+    } else {
+      params.delete("panel");
+    }
+
+    if (transactionSearch.trim()) {
+      params.set("search", transactionSearch.trim());
+    } else {
+      params.delete("search");
+    }
+
+    if (transactionCategoryFilter && transactionCategoryFilter !== "All") {
+      params.set("category", transactionCategoryFilter);
+    } else {
+      params.delete("category");
+    }
+
+    if (transactionSort && transactionSort !== "newest") {
+      params.set("sort", transactionSort);
+    } else {
+      params.delete("sort");
+    }
+
+    if (activeSection && activeSection !== "user") {
+      params.set("section", activeSection);
+    } else {
+      params.delete("section");
+    }
+
+    const nextSearch = params.toString();
+    const nextHash = activeSection ? `#${activeSection}` : window.location.hash;
+    const nextUrl = `${window.location.pathname}${
+      nextSearch ? `?${nextSearch}` : ""
+    }${nextHash}`;
+    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+
+    if (currentUrl !== nextUrl) {
+      window.history.replaceState(null, "", nextUrl);
+    }
+  }, [
+    activeSection,
+    authMode,
+    currentUser,
+    getOpenActionPanel,
+    transactionCategoryFilter,
+    transactionSearch,
+    transactionSort,
+  ]);
 
   function formatCurrency(amount, currency = "EUR") {
     try {
@@ -606,6 +818,7 @@ function App() {
   function handleClearCurrentUser() {
     localStorage.removeItem("currentUser");
     localStorage.removeItem("token");
+    window.history.replaceState(null, "", window.location.pathname);
 
     setCurrentUser(null);
 
@@ -702,22 +915,30 @@ function App() {
 
   return (
     <>
-      <DotGrid
-        className="app-dot-grid"
-        dotSize={4}
-        gap={28}
-        baseColor="#2458d3"
-        activeColor="#0f8a5f"
-        proximity={146}
-        speedTrigger={90}
-        shockRadius={230}
-        shockStrength={2.6}
-        resistance={820}
-        returnDuration={1.8}
-        interactive={!shouldReduceMotion}
-      />
+      {!shouldReduceMotion && (
+        <Suspense fallback={null}>
+          <DotGrid
+            className="app-dot-grid"
+            dotSize={4}
+            gap={28}
+            baseColor="#2458d3"
+            activeColor="#0f8a5f"
+            proximity={146}
+            speedTrigger={90}
+            shockRadius={230}
+            shockStrength={2.6}
+            resistance={820}
+            returnDuration={1.8}
+            interactive
+          />
+        </Suspense>
+      )}
 
       <div className={currentUser ? "app app-authenticated" : "app app-landing"}>
+      <a className="skip-link" href="#main-content">
+        Skip to Content
+      </a>
+
       <header className="site-header">
         <a className="brand-lockup" href="#user" aria-label="FinTrack home">
           <span className="brand-mark">FT</span>
@@ -729,6 +950,7 @@ function App() {
         </span>
       </header>
 
+      <main id="main-content">
       {!currentUser && (
         <LandingPage
           authMode={authMode}
@@ -816,6 +1038,18 @@ function App() {
       )}
 
       {currentUser && (
+        <FadeContent delay={0.02}>
+          <SetupProgress
+            wallets={wallets}
+            accounts={accounts}
+            transactions={transactions}
+            budgets={budgets}
+            onStepAction={handleSetupStepAction}
+          />
+        </FadeContent>
+      )}
+
+      {currentUser && (
         <section id="user">
           <FadeContent delay={0.04}>
             <Card className="profile-card">
@@ -862,7 +1096,7 @@ function App() {
       {isLoadingData && (
         <div className="loading-strip" role="status">
           <span className="loading-dot" aria-hidden="true"></span>
-          <p>Refreshing your dashboard…</p>
+          <p>Refreshing your dashboard...</p>
         </div>
       )}
 
@@ -1314,7 +1548,10 @@ function App() {
                       <div className="transaction-tools">
                         <TextInput
                           type="text"
-                          placeholder="Search transactions…"
+                          name="transaction-search"
+                          aria-label="Search Transactions"
+                          autoComplete="off"
+                          placeholder="Search transactions..."
                           value={transactionSearch}
                           onChange={(e) =>
                             setTransactionSearch(e.target.value)
@@ -1322,6 +1559,9 @@ function App() {
                         />
 
                         <SelectInput
+                          name="transaction-category-filter"
+                          aria-label="Filter Transactions by Category"
+                          autoComplete="off"
                           value={transactionCategoryFilter}
                           onChange={(e) =>
                             setTransactionCategoryFilter(e.target.value)
@@ -1335,6 +1575,9 @@ function App() {
                         </SelectInput>
 
                         <SelectInput
+                          name="transaction-sort"
+                          aria-label="Sort Transactions"
+                          autoComplete="off"
                           value={transactionSort}
                           onChange={(e) => setTransactionSort(e.target.value)}
                         >
@@ -1592,6 +1835,7 @@ function App() {
           )}
         </>
       )}
+      </main>
 
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
 

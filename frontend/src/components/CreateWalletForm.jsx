@@ -38,7 +38,12 @@ function CreateWalletForm({ onWalletCreated, onNotify }) {
     <FormCard title="Create Wallet" description="Create a wallet for a specific currency.">
       <form onSubmit={handleSubmit} className="form-grid">
         <FormField label="Currency" fullWidth>
-          <SelectInput value={currency} onChange={(e) => setCurrency(e.target.value)}>
+          <SelectInput
+            name="wallet-currency"
+            autoComplete="off"
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+          >
             <option value="EUR">EUR</option>
             <option value="USD">USD</option>
             <option value="GBP">GBP</option>
@@ -47,12 +52,12 @@ function CreateWalletForm({ onWalletCreated, onNotify }) {
 
         <div className="form-actions full-width">
           <Button type="submit" isLoading={isSubmitting}>
-            {isSubmitting ? "Creating…" : "Create Wallet"}
+            {isSubmitting ? "Creating..." : "Create Wallet"}
           </Button>
         </div>
       </form>
 
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
     </FormCard>
   );
 }

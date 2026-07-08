@@ -73,7 +73,7 @@ function AnalyticsPanel({ userId, transactions }) {
 
         <Button type="button" onClick={loadAnalytics} isLoading={isLoading}>
           {!isLoading && <RefreshCw size={16} strokeWidth={1.9} aria-hidden="true" />}
-          {isLoading ? "Loading…" : "Refresh"}
+          {isLoading ? "Loading..." : "Refresh"}
         </Button>
       </div>
 

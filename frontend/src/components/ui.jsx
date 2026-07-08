@@ -1,3 +1,5 @@
+import { Children, cloneElement, isValidElement, useId } from "react";
+
 function cx(...classes) {
   return classes.filter(Boolean).join(" ");
 }
@@ -43,11 +45,56 @@ function FormCard({ title, description, children, className = "" }) {
   );
 }
 
-function FormField({ label, children, className = "", fullWidth = false }) {
+function FormField({
+  label,
+  children,
+  className = "",
+  fullWidth = false,
+  hint,
+  error,
+}) {
+  const generatedId = useId();
+  const hintId = hint ? `${generatedId}-hint` : undefined;
+  const errorId = error ? `${generatedId}-error` : undefined;
+  const describedBy = [hintId, errorId].filter(Boolean).join(" ") || undefined;
+  const childArray = Children.toArray(children);
+  const firstControlIndex = childArray.findIndex((child) =>
+    isValidElement(child)
+  );
+  const firstControl = childArray[firstControlIndex];
+  const controlId =
+    isValidElement(firstControl) && firstControl.props.id
+      ? firstControl.props.id
+      : generatedId;
+
+  const childrenWithFieldProps = childArray.map((child, index) => {
+    if (!isValidElement(child) || index !== firstControlIndex) {
+      return child;
+    }
+
+    return cloneElement(child, {
+      id: child.props.id || controlId,
+      "aria-describedby": [child.props["aria-describedby"], describedBy]
+        .filter(Boolean)
+        .join(" ") || undefined,
+      "aria-invalid": error ? true : child.props["aria-invalid"],
+    });
+  });
+
   return (
     <div className={cx("form-field", fullWidth && "full-width", className)}>
-      {label && <label>{label}</label>}
-      {children}
+      {label && <label htmlFor={controlId}>{label}</label>}
+      {childrenWithFieldProps}
+      {hint && (
+        <small className="form-helper" id={hintId}>
+          {hint}
+        </small>
+      )}
+      {error && (
+        <small className="form-warning" id={errorId} role="alert">
+          {error}
+        </small>
+      )}
     </div>
   );
 }

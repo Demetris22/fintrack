@@ -64,6 +64,8 @@ function CreateBudgetForm({ userId, onBudgetCreated, onNotify }) {
       <form onSubmit={handleSubmit} className="form-grid">
         <FormField label="Category">
           <SelectInput
+            name="budget-category"
+            autoComplete="off"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             required
@@ -81,8 +83,12 @@ function CreateBudgetForm({ userId, onBudgetCreated, onNotify }) {
         <FormField label="Monthly limit">
           <TextInput
             type="number"
+            name="monthly-limit"
+            autoComplete="off"
+            inputMode="decimal"
+            min="0.01"
             step="0.01"
-            placeholder="Example: 500"
+            placeholder="500..."
             value={monthlyLimit}
             onChange={(e) => setMonthlyLimit(e.target.value)}
             required
@@ -90,7 +96,12 @@ function CreateBudgetForm({ userId, onBudgetCreated, onNotify }) {
         </FormField>
 
         <FormField label="Currency">
-          <SelectInput value={currency} onChange={(e) => setCurrency(e.target.value)}>
+          <SelectInput
+            name="budget-currency"
+            autoComplete="off"
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+          >
             <option value="EUR">EUR</option>
             <option value="USD">USD</option>
             <option value="GBP">GBP</option>
@@ -103,12 +114,12 @@ function CreateBudgetForm({ userId, onBudgetCreated, onNotify }) {
             isLoading={isSubmitting}
             disabled={!category || Number(monthlyLimit) <= 0}
           >
-            {isSubmitting ? "Creating…" : "Create Budget"}
+            {isSubmitting ? "Creating..." : "Create Budget"}
           </Button>
         </div>
       </form>
 
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
     </FormCard>
   );
 }

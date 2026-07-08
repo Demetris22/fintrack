@@ -57,7 +57,10 @@ function CreateUserForm({ onUserCreated, onNotify }) {
         <FormField label="Email">
           <TextInput
             type="email"
-            placeholder="Example: demetris@email.com"
+            name="email"
+            autoComplete="email"
+            spellCheck={false}
+            placeholder="demetris@email.com..."
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -67,7 +70,9 @@ function CreateUserForm({ onUserCreated, onNotify }) {
         <FormField label="Password">
           <TextInput
             type="password"
-            placeholder="Enter a password"
+            name="new-password"
+            autoComplete="new-password"
+            placeholder="Enter a password..."
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -77,7 +82,9 @@ function CreateUserForm({ onUserCreated, onNotify }) {
         <FormField label="Full name" fullWidth>
           <TextInput
             type="text"
-            placeholder="Example: Demetris Demetriou"
+            name="name"
+            autoComplete="name"
+            placeholder="Demetris Demetriou..."
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
           />
@@ -85,13 +92,13 @@ function CreateUserForm({ onUserCreated, onNotify }) {
 
         <div className="form-actions full-width">
           <Button type="submit" isLoading={isSubmitting}>
-            {isSubmitting ? "Creating…" : "Create User"}
+            {isSubmitting ? "Creating..." : "Create User"}
           </Button>
         </div>
       </form>
 
-      {message && <p className="success">{message}</p>}
-      {error && <p className="error">{error}</p>}
+      {message && <p className="success" role="status">{message}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
     </FormCard>
   );
 }

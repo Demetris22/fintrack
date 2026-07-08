@@ -72,7 +72,7 @@ function TransferWalletForm({ wallets, onTransferCompleted, onNotify }) {
       return walletId;
     }
 
-    return `${walletId.slice(0, 6)}…${walletId.slice(-6)}`;
+    return `${walletId.slice(0, 6)}...${walletId.slice(-6)}`;
   }
 
   async function handleSubmit(e) {
@@ -182,6 +182,8 @@ function TransferWalletForm({ wallets, onTransferCompleted, onNotify }) {
       <form onSubmit={handleSubmit} className="form-grid">
         <FormField label="Source wallet">
           <SelectInput
+            name="source-wallet"
+            autoComplete="off"
             value={effectiveSourceWalletId}
             onChange={(e) => handleSourceWalletChange(e.target.value)}
             required
@@ -202,13 +204,22 @@ function TransferWalletForm({ wallets, onTransferCompleted, onNotify }) {
         </FormField>
 
         <FormField label="Currency">
-          <TextInput type="text" value={effectiveCurrency} readOnly />
+          <TextInput
+            type="text"
+            name="transfer-currency"
+            autoComplete="off"
+            value={effectiveCurrency}
+            readOnly
+          />
         </FormField>
 
         <FormField label="Destination wallet ID" fullWidth>
           <TextInput
             type="text"
-            placeholder="Paste destination wallet ID"
+            name="destination-wallet-id"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="Paste destination wallet ID..."
             value={destinationWalletId}
             onChange={(e) => setDestinationWalletId(e.target.value)}
             required
@@ -228,8 +239,12 @@ function TransferWalletForm({ wallets, onTransferCompleted, onNotify }) {
         <FormField label="Amount">
           <TextInput
             type="number"
+            name="transfer-amount"
+            autoComplete="off"
+            inputMode="decimal"
+            min="0.01"
             step="0.01"
-            placeholder="Example: 30"
+            placeholder="30..."
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             required
@@ -251,7 +266,9 @@ function TransferWalletForm({ wallets, onTransferCompleted, onNotify }) {
         <FormField label="Description">
           <TextInput
             type="text"
-            placeholder="Optional transfer note"
+            name="transfer-description"
+            autoComplete="off"
+            placeholder="Optional transfer note..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
@@ -293,12 +310,12 @@ function TransferWalletForm({ wallets, onTransferCompleted, onNotify }) {
             disabled={isSubmitting || !isTransferReady}
             isLoading={isSubmitting}
           >
-            {isSubmitting ? "Transferring…" : "Transfer Funds"}
+            {isSubmitting ? "Transferring..." : "Transfer Funds"}
           </Button>
         </div>
       </form>
 
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
     </FormCard>
   );
 }

@@ -282,6 +282,25 @@ li {
   opacity: 0.22;
 }
 
+.skip-link {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 100;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: #ffffff;
+  padding: 10px 14px;
+  font-weight: 850;
+  text-decoration: none;
+  transform: translateY(-150%);
+  transition: transform 0.2s var(--ease);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
 .site-header {
   min-height: 66px;
   display: flex;
@@ -850,6 +869,149 @@ li {
   color: #ffffff;
   background: var(--accent);
   box-shadow: 0 10px 22px rgba(36, 88, 211, 0.2);
+}
+
+.setup-progress-card {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.9fr) minmax(180px, 0.45fr);
+  align-items: center;
+  gap: 18px;
+  margin: 0 0 24px;
+  padding: 22px;
+}
+
+.setup-progress-copy {
+  min-width: 0;
+}
+
+.setup-progress-copy h2 {
+  margin: 4px 0 8px;
+  color: var(--text);
+  font-size: clamp(22px, 3vw, 32px);
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.setup-progress-copy p:last-child {
+  max-width: 620px;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.setup-progress-meter {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.setup-progress-meter > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.setup-progress-meter strong {
+  color: var(--accent);
+  font-size: 20px;
+}
+
+.setup-progress-track {
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--surface-muted);
+}
+
+.setup-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), var(--success));
+  transition: width 0.36s var(--ease);
+}
+
+.setup-step-grid {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.setup-step {
+  min-height: 86px;
+  justify-content: flex-start;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--surface-muted);
+  color: var(--text);
+  padding: 12px;
+  text-align: left;
+  box-shadow: none;
+}
+
+.setup-step:hover:not(:disabled),
+.setup-step:focus-visible {
+  border-color: rgba(36, 88, 211, 0.32);
+  background: var(--surface);
+  transform: translateY(-1px);
+}
+
+.setup-step:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
+.setup-step.complete {
+  border-color: rgba(15, 138, 95, 0.22);
+  background: var(--success-soft);
+}
+
+.setup-step-icon {
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--accent);
+}
+
+.setup-step.complete .setup-step-icon {
+  color: var(--success);
+}
+
+.setup-step > span:nth-child(2) {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.setup-step strong {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.setup-step small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.setup-step-dot {
+  margin-left: auto;
+  color: var(--subtle);
+}
+
+.setup-progress-action {
+  grid-column: 2;
+  justify-self: end;
 }
 
 section {
@@ -2223,6 +2385,7 @@ select:focus-visible,
   .auth-toggle,
   .landing-benefit-strip li,
   .card,
+  .setup-step,
   .summary-card,
   .wallet-card,
   .data-row,
@@ -2234,6 +2397,10 @@ select:focus-visible,
 
   .card {
     border-color: rgba(76, 93, 117, 0.8);
+  }
+
+  .setup-step-icon {
+    background: rgba(238, 243, 248, 0.08);
   }
 
   .dashboard-hero,
@@ -2351,6 +2518,19 @@ select:focus-visible,
 
   .summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .setup-progress-card {
+    grid-template-columns: 1fr;
+  }
+
+  .setup-progress-action {
+    grid-column: 1;
+    justify-self: start;
+  }
+
+  .setup-step-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .landing-feature-grid {
@@ -2566,6 +2746,18 @@ select:focus-visible,
   .top-nav-shell::after {
     border-radius: 0 18px 18px 0;
     opacity: 1;
+  }
+
+  .setup-step-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .setup-step {
+    min-height: 72px;
+  }
+
+  .setup-progress-action {
+    width: 100%;
   }
 
   .toast-region {

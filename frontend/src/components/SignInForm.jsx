@@ -54,7 +54,10 @@ function SignInForm({ onUserSignedIn, onNotify }) {
         <FormField label="Email" fullWidth>
           <TextInput
             type="email"
-            placeholder="Example: demetris@email.com"
+            name="email"
+            autoComplete="email"
+            spellCheck={false}
+            placeholder="demetris@email.com..."
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -64,7 +67,9 @@ function SignInForm({ onUserSignedIn, onNotify }) {
         <FormField label="Password" fullWidth>
           <TextInput
             type="password"
-            placeholder="Enter your password"
+            name="current-password"
+            autoComplete="current-password"
+            placeholder="Enter your password..."
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -73,12 +78,12 @@ function SignInForm({ onUserSignedIn, onNotify }) {
 
         <div className="form-actions full-width">
           <Button type="submit" isLoading={isSubmitting}>
-            {isSubmitting ? "Signing in…" : "Sign In"}
+            {isSubmitting ? "Signing in..." : "Sign In"}
           </Button>
         </div>
       </form>
 
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
     </FormCard>
   );
 }

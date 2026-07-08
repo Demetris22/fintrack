@@ -63,7 +63,9 @@ function CreateAccountForm({ userId, onAccountCreated, onNotify }) {
         <FormField label="Account name">
           <TextInput
             type="text"
-            placeholder="Example: Main Wallet"
+            name="account-name"
+            autoComplete="off"
+            placeholder="Main Wallet..."
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -73,7 +75,9 @@ function CreateAccountForm({ userId, onAccountCreated, onNotify }) {
         <FormField label="Institution">
           <TextInput
             type="text"
-            placeholder="Example: Revolut, Hellenic Bank"
+            name="institution"
+            autoComplete="off"
+            placeholder="Revolut, Hellenic Bank..."
             value={institution}
             onChange={(e) => setInstitution(e.target.value)}
           />
@@ -81,6 +85,8 @@ function CreateAccountForm({ userId, onAccountCreated, onNotify }) {
 
         <FormField label="Account type">
           <SelectInput
+            name="account-type"
+            autoComplete="off"
             value={accountType}
             onChange={(e) => setAccountType(e.target.value)}
           >
@@ -92,7 +98,12 @@ function CreateAccountForm({ userId, onAccountCreated, onNotify }) {
         </FormField>
 
         <FormField label="Currency">
-          <SelectInput value={currency} onChange={(e) => setCurrency(e.target.value)}>
+          <SelectInput
+            name="currency"
+            autoComplete="off"
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+          >
             <option value="EUR">EUR</option>
             <option value="USD">USD</option>
             <option value="GBP">GBP</option>
@@ -101,12 +112,12 @@ function CreateAccountForm({ userId, onAccountCreated, onNotify }) {
 
         <div className="form-actions full-width">
           <Button type="submit" isLoading={isSubmitting} disabled={!name.trim()}>
-            {isSubmitting ? "Creating…" : "Create Account"}
+            {isSubmitting ? "Creating..." : "Create Account"}
           </Button>
         </div>
       </form>
 
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
     </FormCard>
   );
 }

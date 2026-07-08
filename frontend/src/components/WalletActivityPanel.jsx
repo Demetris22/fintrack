@@ -142,6 +142,8 @@ function WalletActivityPanel({ wallets, refreshKey = 0, onNotify }) {
           <div className="wallet-activity-toolbar">
             <FormField label="Select wallet" className="wallet-activity-select">
               <SelectInput
+                name="wallet-activity-wallet"
+                autoComplete="off"
                 value={activeWalletId}
                 onChange={(e) => setSelectedWalletId(e.target.value)}
               >
@@ -160,11 +162,11 @@ function WalletActivityPanel({ wallets, refreshKey = 0, onNotify }) {
               isLoading={isLoading}
             >
               {!isLoading && <RefreshCw size={16} strokeWidth={1.9} aria-hidden="true" />}
-              {isLoading ? "Loading…" : "Refresh"}
+              {isLoading ? "Loading..." : "Refresh"}
             </Button>
           </div>
 
-          {error && <p className="error">{error}</p>}
+          {error && <p className="error" role="alert">{error}</p>}
 
           {isLoading && transactions.length === 0 ? (
             <div className="data-list activity-skeleton-list" aria-hidden="true">
